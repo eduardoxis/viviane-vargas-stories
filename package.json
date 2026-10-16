@@ -1,0 +1,9 @@
+{
+  "name": "viviane-vargas-stories",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "dependencies": {
+    "firebase-admin": "^12.3.1"
+  }
+}

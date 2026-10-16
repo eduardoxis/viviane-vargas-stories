@@ -4,8 +4,8 @@ import {
   updateDoc, deleteDoc, query, orderBy, limit,
   serverTimestamp, Timestamp, where
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { formatarMoeda, formatarData, escHtml, exportarExcel } from "./database.js";
+import { db } from "../services/firebase-config.js";
+import { formatarMoeda, formatarData, escHtml, exportarExcel } from "../utils/database.js";
 
 const COL = "mj_produtos";
 const COL_HIST = "mj_estoque_historico";

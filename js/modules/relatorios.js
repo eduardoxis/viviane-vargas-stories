@@ -2,8 +2,8 @@
 import {
   collection, getDocs, query, orderBy, addDoc, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { formatarMoeda, escHtml, exportarExcel } from "./database.js";
+import { db } from "../services/firebase-config.js";
+import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
 const COL_VENDAS    = "mj_vendas";
 const COL_COMPRAS   = "mj_compras_fornec";

@@ -3,8 +3,8 @@ import {
   collection, doc, addDoc, getDoc, getDocs,
   updateDoc, deleteDoc, query, orderBy, serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { formatarMoeda, formatarData, escHtml } from "./database.js";
+import { db } from "../services/firebase-config.js";
+import { formatarMoeda, formatarData, escHtml } from "../utils/database.js";
 
 const COL = "mj_clientes";
 

@@ -4,8 +4,8 @@ import {
   updateDoc, deleteDoc, query, where, orderBy,
   serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { db } from "./firebase-config.js";
-import { formatarMoeda, escHtml, exportarExcel } from "./database.js";
+import { db } from "../services/firebase-config.js";
+import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
 const COL_CLIENTES   = "prom_clientes";
 const COL_COMPRAS    = "prom_compras";
