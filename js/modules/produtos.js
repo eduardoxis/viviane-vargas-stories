@@ -1247,9 +1247,13 @@ async function lerArquivoTabular(file) {
   const ext = file.name.split(".").pop().toLowerCase();
   if (ext === "json") {
     const conteudo = JSON.parse(await file.text());
-    const produtos = Array.isArray(conteudo) ? conteudo : conteudo?.produtos;
+    // Aceita tanto uma lista direta quanto os backups do painel
+    // ({ produtos: [...] } ou { colecoes: { produtos: [...] } }).
+    const produtos = Array.isArray(conteudo)
+      ? conteudo
+      : conteudo?.produtos || conteudo?.colecoes?.produtos;
     if (!Array.isArray(produtos)) {
-      throw new Error("O JSON precisa conter uma lista de produtos ou a chave 'produtos'.");
+      throw new Error("O JSON precisa conter uma lista de produtos, a chave 'produtos' ou 'colecoes.produtos'.");
     }
     const campo = (produto, ...nomes) => {
       const chaves = Object.keys(produto || {});
@@ -1257,21 +1261,25 @@ async function lerArquivoTabular(file) {
       const chave = chaves.find((item) => nomes.some((nome) => normalizar(item) === normalizar(nome)));
       return chave ? produto[chave] ?? "" : "";
     };
-    const cabecalho = ["NOME", "CODIGO", "CODIGO DE BARRAS", "CATEGORIA", "PRECO VENDA", "PRECO CUSTO", "ESTOQUE", "UNIDADE", "ESTOQUE MINIMO", "OUTROS GASTOS", "IMPOSTOS", "TAXAS"];
-    const linhas = produtos.filter((produto) => produto && typeof produto === "object").map((produto) => [
-      campo(produto, "nome"),
-      campo(produto, "codigo", "codigoInterno"),
-      campo(produto, "codigoBarras", "ean", "barcode"),
-      campo(produto, "categoria"),
-      campo(produto, "preco", "precoVenda"),
-      campo(produto, "precoCusto", "custo"),
-      campo(produto, "estoque", "quantidade"),
-      campo(produto, "unidade"),
-      campo(produto, "estoqueMinimo", "minimo"),
-      campo(produto, "outrosGastos"),
-      campo(produto, "impostosPct", "impostos"),
-      campo(produto, "taxasPct", "taxas")
-    ]);
+    const cabecalho = ["NOME", "CODIGO", "CODIGO DE BARRAS", "CATEGORIA", "PRECO VENDA", "PRECO CUSTO", "ESTOQUE", "UNIDADE", "ESTOQUE MINIMO", "OUTROS GASTOS", "IMPOSTOS", "TAXAS", "FOTO"];
+    const linhas = produtos.filter((produto) => produto && typeof produto === "object").map((produto) => {
+      const foto = campo(produto, "imagem") || (Array.isArray(produto.imagens) ? produto.imagens[0] : "");
+      return [
+        campo(produto, "nome"),
+        campo(produto, "codigo", "codigoInterno"),
+        campo(produto, "codigoBarras", "ean", "barcode"),
+        campo(produto, "categoria"),
+        campo(produto, "preco", "precoVenda"),
+        campo(produto, "precoCusto", "custo"),
+        campo(produto, "estoque", "quantidade"),
+        campo(produto, "unidade"),
+        campo(produto, "estoqueMinimo", "minimo"),
+        campo(produto, "outrosGastos"),
+        campo(produto, "impostosPct", "impostos"),
+        campo(produto, "taxasPct", "taxas"),
+        foto
+      ];
+    });
     return [cabecalho, ...linhas];
   }
   if (ext === "xlsx" || ext === "xls") {
@@ -1299,7 +1307,7 @@ async function importarProdutos(file) {
   const col = (...ns) => { for (const n of ns) { const i = cab.findIndex(c => c.includes(n)); if (i !== -1) return i; } return -1; };
   const iNome = col("NOME"), iCodigo = col("CÓDIGO", "CODIGO INTERNO", "CODIGO"), iCodBarras = col("CÓDIGO DE BARRAS","CODIGO DE BARRAS","BARRAS"),
         iCategoria = col("CATEGORIA"), iPreco = col("PREÇO VENDA","PRECO VENDA","PREÇO","PRECO"), iPrecoCusto = col("PREÇO CUSTO","PRECO CUSTO","CUSTO"),
-        iEstoque = col("ESTOQUE"), iUnidade = col("UNIDADE"), iEstMin = col("ESTOQUE MÍNIMO","ESTOQUE MINIMO","MÍNIMO","MINIMO"), iOutros = col("OUTROS GASTOS","OUTROS"), iImpostos = col("IMPOSTOS"), iTaxas = col("TAXAS");
+        iEstoque = col("ESTOQUE"), iUnidade = col("UNIDADE"), iEstMin = col("ESTOQUE MÍNIMO","ESTOQUE MINIMO","MÍNIMO","MINIMO"), iOutros = col("OUTROS GASTOS","OUTROS"), iImpostos = col("IMPOSTOS"), iTaxas = col("TAXAS"), iFoto = col("FOTO", "IMAGEM");
 
   if (iNome === -1) { window.mostrarToast("Coluna NOME não encontrada na planilha.", "error"); return; }
   const dados = linhasRaw.slice(1).filter(r => String(r[iNome] || "").trim());
@@ -1350,6 +1358,7 @@ async function importarProdutos(file) {
           outrosGastos: iOutros!==-1 ? (parseFloat(String(r[iOutros]||"0").replace(",", ".")) || 0) : 0,
           impostosPct: iImpostos!==-1 ? (parseFloat(String(r[iImpostos]||"0").replace(",", ".")) || 0) : 0,
           taxasPct: iTaxas!==-1 ? (parseFloat(String(r[iTaxas]||"0").replace(",", ".")) || 0) : 0,
+          foto: iFoto!==-1 ? String(r[iFoto] || "").trim() || null : null,
           criadoEm: serverTimestamp()
         });
         if (estoqueImport > 0) {
