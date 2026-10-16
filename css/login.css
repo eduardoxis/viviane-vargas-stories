@@ -36,6 +36,11 @@
 .login-field { display: grid; gap: 7px; color: #4F3928; font-size: .875rem; font-weight: 600; }
 .login-field .field-input--plain { min-height: 46px; border-color: var(--blue-200); }
 .login-field .field-input--plain:focus { border-color: #70141B; box-shadow: 0 0 0 3px rgba(112, 20, 27, .1); }
+.password-control { position: relative; display: block; }
+.password-control .field-input--plain { width: 100%; padding-right: 48px; }
+.password-toggle { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border: 0; border-radius: 7px; background: transparent; color: #806854; cursor: pointer; display: grid; place-items: center; }
+.password-toggle:hover, .password-toggle:focus-visible { background: #FFF8EE; color: #70141B; outline: none; }
+.password-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
 .login-error { color: #9B1C1C; background: #FFF0EE; border: 1px solid #F5C7C2; border-radius: 8px; padding: 10px 12px; font-size: .875rem; text-align: center; }
 .login-submit { justify-content: center; min-height: 46px; background: #70141B; }
 .login-submit:hover { background: #5C0E14; }

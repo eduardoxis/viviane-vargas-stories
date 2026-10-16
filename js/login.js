@@ -6,6 +6,7 @@ const emailInput = document.getElementById("loginEmail");
 const senhaInput = document.getElementById("loginSenha");
 const erro = document.getElementById("loginErro");
 const btnEntrar = document.getElementById("btnEntrar");
+const btnMostrarSenha = document.getElementById("btnMostrarSenha");
 const CHAVE_TENTATIVAS = "vv_login_tentativas";
 const MAX_TENTATIVAS = 5;
 const JANELA_TENTATIVAS_MS = 15 * 60 * 1000;
@@ -71,6 +72,15 @@ function limparTentativas() {
 // O e-mail nunca aceita caracteres usados em tags ou atributos HTML.
 emailInput.addEventListener("input", () => {
   emailInput.value = emailInput.value.replace(/[<>"'`]/g, "").trimStart();
+});
+
+btnMostrarSenha.addEventListener("click", () => {
+  const senhaVisivel = senhaInput.type === "text";
+  senhaInput.type = senhaVisivel ? "password" : "text";
+  const texto = senhaVisivel ? "Mostrar senha" : "Ocultar senha";
+  btnMostrarSenha.setAttribute("aria-label", texto);
+  btnMostrarSenha.title = texto;
+  senhaInput.focus();
 });
 
 const mensagemPendente = sessionStorage.getItem("vv_login_erro");
