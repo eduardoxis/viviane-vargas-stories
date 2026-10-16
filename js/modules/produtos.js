@@ -1242,9 +1242,38 @@ async function exportarProdutos() {
   }
 }
 
-// ── Importação de produtos (CSV / Excel) ────────────────────────
+// ── Importação de produtos (CSV / Excel / JSON) ─────────────────
 async function lerArquivoTabular(file) {
   const ext = file.name.split(".").pop().toLowerCase();
+  if (ext === "json") {
+    const conteudo = JSON.parse(await file.text());
+    const produtos = Array.isArray(conteudo) ? conteudo : conteudo?.produtos;
+    if (!Array.isArray(produtos)) {
+      throw new Error("O JSON precisa conter uma lista de produtos ou a chave 'produtos'.");
+    }
+    const campo = (produto, ...nomes) => {
+      const chaves = Object.keys(produto || {});
+      const normalizar = (valor) => String(valor).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-zA-Z0-9]/g, "").toLowerCase();
+      const chave = chaves.find((item) => nomes.some((nome) => normalizar(item) === normalizar(nome)));
+      return chave ? produto[chave] ?? "" : "";
+    };
+    const cabecalho = ["NOME", "CODIGO", "CODIGO DE BARRAS", "CATEGORIA", "PRECO VENDA", "PRECO CUSTO", "ESTOQUE", "UNIDADE", "ESTOQUE MINIMO", "OUTROS GASTOS", "IMPOSTOS", "TAXAS"];
+    const linhas = produtos.filter((produto) => produto && typeof produto === "object").map((produto) => [
+      campo(produto, "nome"),
+      campo(produto, "codigo", "codigoInterno"),
+      campo(produto, "codigoBarras", "ean", "barcode"),
+      campo(produto, "categoria"),
+      campo(produto, "preco", "precoVenda"),
+      campo(produto, "precoCusto", "custo"),
+      campo(produto, "estoque", "quantidade"),
+      campo(produto, "unidade"),
+      campo(produto, "estoqueMinimo", "minimo"),
+      campo(produto, "outrosGastos"),
+      campo(produto, "impostosPct", "impostos"),
+      campo(produto, "taxasPct", "taxas")
+    ]);
+    return [cabecalho, ...linhas];
+  }
   if (ext === "xlsx" || ext === "xls") {
     if (!window.XLSX) { window.mostrarToast("Biblioteca XLSX ainda carregando.", "error"); return null; }
     const buf = await file.arrayBuffer();
@@ -1263,7 +1292,7 @@ async function lerArquivoTabular(file) {
 async function importarProdutos(file) {
   let linhasRaw;
   try { linhasRaw = await lerArquivoTabular(file); }
-  catch (err) { console.error(err); window.mostrarToast("Erro ao ler arquivo.", "error"); return; }
+  catch (err) { console.error(err); window.mostrarToast(err.message || "Erro ao ler arquivo.", "error"); return; }
   if (!linhasRaw || linhasRaw.length < 2) { window.mostrarToast("Arquivo vazio ou inválido.", "error"); return; }
 
   const cab = linhasRaw[0].map(c => String(c).toUpperCase().replace(/\s+/g, " ").trim());
