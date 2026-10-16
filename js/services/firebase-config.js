@@ -3,15 +3,14 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebas
 import { getAuth }       from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { getFirestore }  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-// Preencha com as credenciais do novo projeto Firebase
-// (Firebase Console → ⚙️ Configurações do projeto → Seus apps → SDK do Firebase)
+// Configuração pública do aplicativo web Firebase.
 const firebaseConfig = {
-  apiKey:            "",
-  authDomain:        "",
-  projectId:         "",
-  storageBucket:     "",
-  messagingSenderId: "",
-  appId:             ""
+  apiKey:            "AIzaSyBR_9BwyZuqFwDBWo3tKDfvNw2gy3ud02w",
+  authDomain:        "viviane-vargas-stories.firebaseapp.com",
+  projectId:         "viviane-vargas-stories",
+  storageBucket:     "viviane-vargas-stories.firebasestorage.app",
+  messagingSenderId: "435149100307",
+  appId:             "1:435149100307:web:ad341be54acb289df7b6e6"
 };
 
 const app = initializeApp(firebaseConfig);
