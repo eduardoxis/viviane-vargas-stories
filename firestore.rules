@@ -1,0 +1,94 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function autenticado() {
+      return request.auth != null;
+    }
+
+    function ehAdmin() {
+      return autenticado() &&
+        get(/databases/$(database)/documents/mj_usuarios/$(request.auth.uid)).data.role == "admin";
+    }
+
+    // ── Usuários do sistema ──────────────────────────────────
+    match /mj_usuarios/{uid} {
+      allow read:   if autenticado() && (request.auth.uid == uid || ehAdmin());
+      allow write:  if ehAdmin();
+      allow create: if autenticado() && request.auth.uid == uid;
+    }
+
+    // ── Produtos / Estoque ───────────────────────────────────
+    match /mj_produtos/{id} {
+      allow read:   if autenticado();
+      allow write:  if autenticado();
+    }
+
+    // ── Clientes ─────────────────────────────────────────────
+    match /mj_clientes/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ── Promissórias ─────────────────────────────────────────
+    match /prom_clientes/{id} {
+      allow read, write: if ehAdmin();
+    }
+    match /prom_compras/{id} {
+      allow read, write: if ehAdmin();
+    }
+    match /prom_pagamentos/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ── Vendas ───────────────────────────────────────────────
+    match /mj_vendas/{id} {
+      allow read:   if autenticado();
+      allow create: if autenticado();
+      allow update: if autenticado();
+      allow delete: if ehAdmin();
+    }
+
+    match /mj_venda_itens/{id} {
+      allow read:   if autenticado();
+      allow create: if autenticado();
+      allow delete: if ehAdmin();
+    }
+
+    // ── Compras (Fornecedores) ────────────────────────────────
+    match /mj_compras_fornec/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ── Despesas ─────────────────────────────────────────────
+    match /mj_despesas/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ── Histórico de Estoque ─────────────────────────────────
+    match /mj_estoque_historico/{id} {
+      allow read:   if autenticado();
+      allow create: if autenticado();
+      allow update, delete: if ehAdmin();
+    }
+
+    // ── Histórico de Custo / Margem ──────────────────────────
+    match /mj_custo_historico/{id} {
+      allow read:   if autenticado();
+      allow create: if autenticado();
+      allow update, delete: if ehAdmin();
+    }
+
+    // ── Caixa ────────────────────────────────────────────────
+    match /mj_caixa/{id} {
+      allow read, write: if ehAdmin();
+    }
+
+    // ── Sessões de Caixa (abertura/fechamento/sangria) ───────
+    match /mj_caixa_sessoes/{id} {
+      allow read:   if autenticado();
+      allow create: if autenticado();
+      allow update: if autenticado();
+      allow delete: if ehAdmin();
+    }
+  }
+}

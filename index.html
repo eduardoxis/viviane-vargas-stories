@@ -1,0 +1,1726 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gerência Viviane Vargas Stories — Sistema</title>
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <!-- Silencia o erro "A listener indicated an asynchronous response..." — vem de extensões do navegador, não do sistema -->
+  <script>
+    window.addEventListener("unhandledrejection", function (e) {
+      var msg = String((e.reason && e.reason.message) || e.reason || "");
+      if (msg.indexOf("A listener indicated an asynchronous response") !== -1) e.preventDefault();
+    });
+  </script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- SheetJS (importação CSV/XLSX) -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.5/dist/JsBarcode.all.min.js"></script>
+</head>
+<body>
+
+<!-- ============================================================ -->
+<!-- LOGIN                                                         -->
+<!-- ============================================================ -->
+<div id="page-login">
+  <div class="login-box">
+    <div class="login-logo">
+      <div class="login-logo-icon login-logo-icon--img"><img src="img/logo.png" alt="Gerência Viviane Vargas Stories" class="logo-img"></div>
+      <div class="login-title">Gerência Viviane Vargas Stories</div>
+      <div class="login-sub">Sistema de Gestão</div>
+    </div>
+    <div class="login-form">
+      <div>
+        <label class="field-label">E-mail</label>
+        <input type="email" id="loginEmail" class="field-input--plain" placeholder="seu@email.com" autocomplete="email" />
+      </div>
+      <div>
+        <label class="field-label">Senha</label>
+        <input type="password" id="loginSenha" class="field-input--plain" placeholder="••••••••" autocomplete="current-password" />
+      </div>
+      <div id="loginErro" class="login-error" hidden></div>
+      <button class="btn-primary" id="btnEntrar" style="justify-content:center;padding:12px">Entrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================ -->
+<!-- APP (oculto até login)                                        -->
+<!-- ============================================================ -->
+<div id="appShell" hidden>
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-header">
+    <div class="sidebar-logo">
+      <div class="sidebar-logo-icon"><img src="img/logo.png" alt="Gerência Viviane Vargas Stories" class="logo-img"></div>
+      <div class="sidebar-logo-text">
+        <span class="sidebar-logo-name">Gerência Viviane Vargas Stories</span>
+        <span class="sidebar-logo-sub">Sistema</span>
+      </div>
+    </div>
+    <button class="sidebar-close" id="btnFecharSidebar" aria-label="Fechar menu">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav" aria-label="Menu principal">
+    <ul class="nav-list" role="list">
+      <li>
+        <a href="#" class="nav-item" data-page="dashboard">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+          Dashboard
+        </a>
+      </li>
+      <!-- Visível para todos os usuários -->
+      <li class="nav-item-funcionario">
+        <a href="#" class="nav-item" data-page="produtos">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+          Produtos / Estoque
+        </a>
+      </li>
+      <!-- Apenas admin -->
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="clientes">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+          Clientes
+        </a>
+      </li>
+      <!-- Caixa — visível para todos (Nova Venda fica liberado; resumo financeiro continua admin) -->
+      <li class="nav-item-funcionario">
+        <a href="#" class="nav-item" data-page="caixa">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+          Caixa
+        </a>
+      </li>
+      <!-- Compras — admin -->
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="compras">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+          Compras
+        </a>
+      </li>
+      <!-- Relatórios — admin -->
+      <!-- Despesas — admin -->
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="despesas">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM7 9a1 1 0 000 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+          Despesas
+        </a>
+      </li>
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="relatorios">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+          Relatórios
+        </a>
+      </li>
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="promissoria">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+          Promissórias
+        </a>
+      </li>
+      <li class="nav-item-admin" hidden>
+        <a href="#" class="nav-item" data-page="configuracoes">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+          Configurações
+        </a>
+      </li>
+    </ul>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user" id="sidebarUser">
+      <div class="user-avatar" id="userAvatar">?</div>
+      <div class="user-info">
+        <span class="user-name" id="userName">Carregando...</span>
+        <span class="user-role" id="userRole">—</span>
+      </div>
+    </div>
+    <button class="btn-logout" id="btnLogout">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 00-1 1v12a1 1 0 102 0V4a1 1 0 00-1-1zm10.293 9.293a1 1 0 001.414 1.414l3-3a1 1 0 000-1.414l-3-3a1 1 0 10-1.414 1.414L14.586 9H7a1 1 0 100 2h7.586l-1.293 1.293z" clip-rule="evenodd"/></svg>
+      Sair
+    </button>
+  </div>
+</aside>
+
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
+
+<!-- MAIN WRAP -->
+<div class="main-wrap">
+
+  <!-- Topbar -->
+  <header class="topbar">
+    <button class="topbar-menu" id="btnAbrirSidebar" aria-label="Abrir menu">
+      <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"/></svg>
+    </button>
+    <h1 class="topbar-title" id="topbarTitle">Dashboard</h1>
+    <div class="topbar-actions">
+      <button class="btn-icon" id="btnToggleValores" title="Ocultar valores">
+        <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- Páginas -->
+  <main class="content-area">
+
+    <!-- ======================================================== -->
+    <!-- DASHBOARD                                                 -->
+    <!-- ======================================================== -->
+    <section id="page-dashboard" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Dashboard</h2>
+          <p class="page-subtitle">Visão geral do sistema</p>
+        </div>
+      </div>
+
+      <!-- KPIs admin -->
+      <div class="stats-grid" id="dashAdminCards">
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total Produtos</span><strong class="stat-card__value" id="dashTotalProdutos">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Clientes</span><strong class="stat-card__value" id="dashTotalClientes">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--gold">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Em Aberto (Prom.)</span><strong class="stat-card__value" id="dashTotalAberto">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--red">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Inadimplentes</span><strong class="stat-card__value" id="dashInadimplentes">—</strong></div>
+        </div>
+      </div>
+
+      <!-- KPI funcionario (só produtos/estoque) -->
+      <div class="stats-grid" id="dashFuncionarioCards" hidden>
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total Produtos</span><strong class="stat-card__value" id="dashFuncProdutos">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--red">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Estoque Baixo</span><strong class="stat-card__value" id="dashFuncBaixo">—</strong></div>
+        </div>
+      </div>
+
+      <!-- Painel de alertas automáticos -->
+      <div id="dashAlertas" style="display:none;flex-direction:column;gap:var(--space-3);margin-bottom:var(--space-5)"></div>
+
+      <!-- Atalhos rápidos -->
+      <div class="card" style="padding:var(--space-5)">
+        <h3 class="card-section-title" style="margin-bottom:var(--space-4)">Atalhos rápidos</h3>
+        <div style="display:flex;gap:var(--space-3);flex-wrap:wrap">
+          <button class="btn-ghost" data-page="produtos" id="atalhoEstoque">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg>
+            Produtos / Estoque
+          </button>
+          <button class="btn-ghost" data-page="caixa" id="atalhoVendas">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+            Caixa
+          </button>
+          <button class="btn-ghost nav-item-admin" data-page="clientes" id="atalhoClientes" hidden>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+            Clientes
+          </button>
+          <button class="btn-ghost nav-item-admin" data-page="compras" id="atalhoCompras" hidden>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4zm-6 3a1 1 0 112 0 1 1 0 01-2 0zm7-1a1 1 0 100 2 1 1 0 000-2z" clip-rule="evenodd"/></svg>
+            Compras
+          </button>
+          <button class="btn-ghost nav-item-admin" data-page="relatorios" id="atalhoRelatorios" hidden>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Relatórios
+          </button>
+          <button class="btn-ghost nav-item-admin" data-page="promissoria" id="atalhoPromissoria" hidden>
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+            Promissórias
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PRODUTOS / ESTOQUE                                        -->
+    <!-- ======================================================== -->
+    <section id="page-produtos" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Produtos / Estoque</h2>
+          <p class="page-subtitle">Cadastro e controle de estoque</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" id="btnHistoricoGeralEstoque">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 3a1 1 0 000 2v8a2 2 0 002 2h2.586l-1.293 1.293a1 1 0 101.414 1.414L10 15.414l2.293 2.293a1 1 0 001.414-1.414L12.414 15H15a2 2 0 002-2V5a1 1 0 100-2H3zm11.707 4.707a1 1 0 00-1.414-1.414L10 9.586 8.707 8.293a1 1 0 00-1.414 0l-2 2a1 1 0 101.414 1.414L8 10.414l1.293 1.293a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+            Histórico do Estoque
+          </button>
+          <button class="btn-primary" id="btnNovoProduto">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Novo Produto
+          </button>
+        </div>
+      </div>
+
+      <!-- Indicadores -->
+      <div class="stats-grid">
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total Produtos</span><strong class="stat-card__value stat-card__value--sm" id="indTotalProdutos">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Itens em Estoque</span><strong class="stat-card__value stat-card__value--sm" id="indTotalEstoque">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--purple">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Valor Inventário</span><strong class="stat-card__value stat-card__value--sm" id="indValorInventario">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--red">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Estoque Baixo</span><strong class="stat-card__value stat-card__value--sm" id="indAbaixoMinimo">—</strong></div>
+        </div>
+      </div>
+
+      <!-- Filtros -->
+      <div class="card" style="padding:var(--space-4) var(--space-5)">
+        <div class="filter-bar">
+          <input type="text" id="filtroBuscaProdutos" class="field-input--plain" placeholder="Buscar por nome ou código..." style="flex:1;min-width:200px" />
+          <select id="filtroCatProdutos" class="field-input--plain" style="min-width:180px">
+            <option value="todos">Todas as categorias</option>
+            <option>Acessórios</option><option>Eletrônicos</option><option>Casa e Decoração</option>
+            <option>Papelaria</option><option>Brinquedos</option><option>Vestuário</option>
+            <option>Beleza e Cuidados</option><option>Utilidades</option><option>Presentes</option>
+            <option>Outros</option>
+          </select>
+          <button class="btn-primary" id="btnBuscarProdutos">Buscar</button>
+          <button class="btn-ghost"   id="btnLimparBuscaProdutos">Limpar</button>
+          <button class="btn-ghost"   id="btnImportarProdutos" style="margin-left:auto">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm6.707-12.707a1 1 0 00-1.414 0L5 7.586V3a1 1 0 10-2 0v7.586l1.293 1.293a1 1 0 001.414 0l4-4a1 1 0 00-1.414-1.414L7 9.172V3z" clip-rule="evenodd"/></svg>
+            Importar
+          </button>
+          <input type="file" id="inputImportarProdutos" accept=".csv,.xlsx,.xls" hidden />
+          <button class="btn-ghost"   id="btnExportarProdutos">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Exportar Excel
+          </button>
+        </div>
+      </div>
+
+      <!-- Tabela -->
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Código</th><th>Nome</th><th>Categoria</th>
+                <th>Preço Venda</th><th>Preço Custo</th><th>Margem</th><th>Estoque</th>
+                <th>Un.</th><th>Cód. Barras</th>
+                <th class="col-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyProdutos">
+              <tr><td colspan="10" class="loading-cell">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- CLIENTES                                                  -->
+    <!-- ======================================================== -->
+    <section id="page-clientes" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Clientes</h2>
+          <p class="page-subtitle">Cadastro de clientes da loja</p>
+        </div>
+        <button class="btn-primary" id="btnNovoCliente">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          Novo Cliente
+        </button>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total Clientes</span><strong class="stat-card__value" id="indTotalClientes">—</strong></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:var(--space-4) var(--space-5)">
+        <div class="filter-bar">
+          <input type="text" id="filtroBuscaClientes" class="field-input--plain" placeholder="Buscar por nome, celular ou endereço..." style="flex:1" />
+          <button class="btn-primary" id="btnBuscarClientes">Buscar</button>
+          <button class="btn-ghost"   id="btnLimparBuscaClientes">Limpar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>Celular</th><th>Endereço</th><th class="col-center">Ações</th></tr></thead>
+            <tbody id="tbodyClientes"><tr><td colspan="4" class="loading-cell">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- PROMISSÓRIAS                                              -->
+    <!-- ======================================================== -->
+    <section id="page-promissoria" class="page" hidden>
+
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Promissórias</h2>
+          <p class="page-subtitle">Controle de crédito e pagamentos de clientes</p>
+        </div>
+      </div>
+
+      <!-- Abas -->
+      <div class="prom-tabs" role="tablist">
+        <button class="prom-tab prom-tab--active" id="tabPromClientes" role="tab" aria-selected="true">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg>
+          Clientes
+        </button>
+        <button class="prom-tab" id="tabPromDashboard" role="tab" aria-selected="false">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+          Dashboard
+        </button>
+      </div>
+
+      <!-- ── PAINEL LISTA DE CLIENTES ── -->
+      <div id="painelListaClientesProm">
+        <!-- Indicadores -->
+        <div class="stats-grid" style="margin-bottom:var(--space-5)">
+          <div class="stat-card stat-card--blue">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total Vendido</span><strong class="stat-card__value stat-card__value--sm" id="indTotalVendido">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total Recebido</span><strong class="stat-card__value stat-card__value--sm" id="indTotalRecebido">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--gold">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total em Aberto</span><strong class="stat-card__value stat-card__value--sm" id="indTotalAberto">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Inadimplentes</span><strong class="stat-card__value stat-card__value--sm" id="indInadimplentes">—</strong></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="background:var(--gray-100);color:var(--gray-500)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M9 6a3 3 0 11-6 0 3 3 0 016 0zM17 6a3 3 0 11-6 0 3 3 0 016 0zM12.93 17c.046-.327.07-.66.07-1a6.97 6.97 0 00-1.5-4.33A5 5 0 0119 16v1h-6.07zM6 11a5 5 0 015 5v1H1v-1a5 5 0 015-5z"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total de Clientes</span><strong class="stat-card__value stat-card__value--sm" id="indClientesTotal">—</strong></div>
+          </div>
+        </div>
+
+        <!-- Ações + Filtros -->
+        <div class="card" style="padding:var(--space-4) var(--space-5);margin-bottom:var(--space-4)">
+          <div style="display:flex;gap:var(--space-3);flex-wrap:wrap;align-items:center;margin-bottom:var(--space-4)">
+            <h3 style="font-weight:700;color:var(--gray-800);flex:1">Clientes com Promissória</h3>
+            <button class="btn-ghost" id="btnImportarCsvProm">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM6.293 6.707a1 1 0 010-1.414l3-3a1 1 0 011.414 0l3 3a1 1 0 01-1.414 1.414L11 5.414V13a1 1 0 11-2 0V5.414L7.707 6.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+              Importar CSV
+            </button>
+            <input type="file" id="inputImportarCsvProm" accept=".csv,.xlsx,.xls" hidden />
+            <button class="btn-ghost" id="btnExportarProm">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+              Exportar Excel
+            </button>
+            <button class="btn-ghost" id="btnImprimirProm">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9h8v4H6v-4zm7-4a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/></svg>
+              Imprimir
+            </button>
+            <button class="btn-primary" id="btnNovoClienteProm">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+              Novo Cliente
+            </button>
+          </div>
+          <div class="filter-bar">
+            <input type="text" id="filtroBuscaProm" class="field-input--plain" placeholder="Buscar por nome ou telefone..." style="flex:1" />
+            <select id="filtroStatusProm" class="field-input--plain" style="min-width:180px">
+              <option value="todos">Todas as situações</option>
+              <option value="Pendente">Pendente</option>
+              <option value="Atrasado">Atrasado</option>
+              <option value="Quitado">Quitado</option>
+            </select>
+            <button class="btn-primary" id="btnBuscarProm">Buscar</button>
+            <button class="btn-ghost"   id="btnLimparBuscaProm">Limpar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Cliente</th><th style="text-align:center">Compras</th>
+                  <th>Total Comprado</th><th>Total Pago</th>
+                  <th>Saldo Devedor</th><th>Situação</th><th class="col-center">Ações</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyClientesProm">
+                <tr><td colspan="7" class="loading-cell">Carregando...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAINEL DETALHES ── -->
+      <div id="painelDetalhesClienteProm" hidden>
+        <p class="loading-cell">Carregando...</p>
+      </div>
+
+      <!-- ── PAINEL DASHBOARD ── -->
+      <div id="painelDashboardProm" hidden>
+        <!-- KPIs -->
+        <div class="stats-grid" style="margin-bottom:var(--space-5)">
+          <div class="stat-card stat-card--blue">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total Vendido</span><strong class="stat-card__value stat-card__value--sm" id="dashIndVendido">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--green">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total Recebido</span><strong class="stat-card__value stat-card__value--sm" id="dashIndRecebido">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--gold">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Total em Aberto</span><strong class="stat-card__value stat-card__value--sm" id="dashIndAberto">—</strong></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="background:#EDE9FE;color:#7C3AED"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Ticket Médio</span><strong class="stat-card__value stat-card__value--sm" id="dashIndTicket">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">% Inadimplência</span><strong class="stat-card__value stat-card__value--sm" id="dashIndInadimplencia">—</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:var(--space-4)">
+          <button class="btn-ghost" id="btnAtualizarDashProm">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Atualizar
+          </button>
+        </div>
+        <!-- Gráficos -->
+        <div class="prom-charts-grid">
+          <div class="card prom-chart-card prom-chart-card--lg">
+            <div class="card-header"><h3 class="card-section-title">Vendido × Recebido (últimos 6 meses)</h3></div>
+            <div class="prom-chart-wrap prom-chart-wrap--lg"><canvas id="chartEvolucao"></canvas></div>
+          </div>
+          <div class="card prom-chart-card">
+            <div class="card-header"><h3 class="card-section-title">Situação dos Clientes</h3></div>
+            <div class="prom-chart-wrap"><canvas id="chartSituacao"></canvas></div>
+          </div>
+          <div class="card prom-chart-card">
+            <div class="card-header"><h3 class="card-section-title">Formas de Pagamento</h3></div>
+            <div class="prom-chart-wrap"><canvas id="chartForma"></canvas></div>
+          </div>
+          <div class="card prom-chart-card prom-chart-card--lg">
+            <div class="card-header"><h3 class="card-section-title">Top 10 Devedores</h3></div>
+            <div class="prom-chart-wrap prom-chart-wrap--lg"><canvas id="chartTop10"></canvas></div>
+          </div>
+          <div class="card prom-chart-card prom-chart-card--lg">
+            <div class="card-header"><h3 class="card-section-title">Novas Compras por Mês (12 meses)</h3></div>
+            <div class="prom-chart-wrap"><canvas id="chartLinha"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <section id="page-compras" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Compras</h2>
+          <p class="page-subtitle">Entradas de mercadoria e controle de fornecedores</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" id="btnExportarCompras">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Exportar Excel
+          </button>
+          <button class="btn-primary" id="btnNovaCompra">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Nova Compra
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-card--gold">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Compras Pendentes</span><strong class="stat-card__value" id="indComprasPendentes">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--red">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total a Pagar</span><strong class="stat-card__value" id="indTotalComprasPend">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total Pago</span><strong class="stat-card__value" id="indTotalComprasPago">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Compras no Mês</span><strong class="stat-card__value" id="indTotalComprasMes">—</strong></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:var(--space-4) var(--space-5)">
+        <div class="filter-bar">
+          <input type="text" id="filtroBuscaCompras" class="field-input--plain" placeholder="Buscar por fornecedor ou descrição..." style="flex:1" />
+          <select id="filtroStatusCompras" class="field-input--plain" style="min-width:160px">
+            <option value="todos">Todas as situações</option>
+            <option value="pendente">Pendente</option>
+            <option value="pago">Pago</option>
+          </select>
+          <button class="btn-primary" id="btnBuscarCompras">Buscar</button>
+          <button class="btn-ghost" id="btnLimparCompras">Limpar</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Fornecedor</th><th>Descrição</th><th>Data</th>
+                <th>Vencimento</th><th>Forma Pag.</th>
+                <th>Total</th><th class="col-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyCompras">
+              <tr><td colspan="7" class="loading-cell">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- DESPESAS                                                  -->
+    <!-- ======================================================== -->
+    <section id="page-despesas" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Despesas</h2>
+          <p class="page-subtitle">Registro e controle das despesas da loja</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-primary" id="btnNovaDespesa">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Nova Despesa
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card stat-card--blue">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Total no Mês</span><strong class="stat-card__value" id="indDespTotalMes">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--purple">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Fixas no Mês</span><strong class="stat-card__value" id="indDespFixasMes">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--green">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 12v3c0 1.657 3.134 3 7 3s7-1.343 7-3v-3c0 1.657-3.134 3-7 3s-7-1.343-7-3z"/><path d="M3 7v3c0 1.657 3.134 3 7 3s7-1.343 7-3V7c0 1.657-3.134 3-7 3S3 8.657 3 7z"/><path d="M17 5c0 1.657-3.134 3-7 3S3 6.657 3 5s3.134-3 7-3 7 1.343 7 3z"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">Variáveis no Mês</span><strong class="stat-card__value" id="indDespVariaveis">—</strong></div>
+        </div>
+        <div class="stat-card stat-card--gold">
+          <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div>
+          <div class="stat-card__body"><span class="stat-card__label">A Pagar (pendentes)</span><strong class="stat-card__value" id="indDespAPagar">—</strong></div>
+        </div>
+      </div>
+
+      <div class="card" style="padding:var(--space-4) var(--space-5)">
+        <div class="filter-bar">
+          <input type="text" id="filtroBuscaDespesas" class="field-input--plain" placeholder="Buscar por descrição ou fornecedor..." style="flex:1;min-width:200px" />
+          <select id="filtroCatDespesas" class="field-input--plain" style="min-width:160px">
+            <option value="todas">Todas as categorias</option>
+            <option>Aluguel</option><option>Água</option><option>Energia</option>
+            <option>Internet / Telefone</option><option>Salários</option><option>Fornecedores</option>
+            <option>Marketing</option><option>Manutenção</option><option>Impostos e Taxas</option>
+            <option>Frete</option><option>Outros</option>
+          </select>
+          <select id="filtroStatusDespesas" class="field-input--plain" style="min-width:150px">
+            <option value="todos">Todas as situações</option>
+            <option value="pago">Pago</option>
+            <option value="pendente">Pendente</option>
+          </select>
+          <input type="month" id="filtroMesDespesas" class="field-input--plain" title="Mês" />
+          <button class="btn-primary" id="btnBuscarDespesas">Buscar</button>
+          <button class="btn-ghost" id="btnLimparDespesas">Limpar</button>
+        </div>
+        <div id="resumoDespesas" style="display:flex;gap:var(--space-5);flex-wrap:wrap;margin-top:var(--space-3);font-size:var(--text-sm);color:var(--gray-500)"></div>
+      </div>
+
+      <div class="card">
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Data</th><th>Descrição</th><th>Categoria</th><th>Tipo</th>
+                <th>Valor</th><th>Situação</th><th class="col-center">Ações</th>
+              </tr>
+            </thead>
+            <tbody id="tbodyDespesas">
+              <tr><td colspan="7" class="loading-cell">Carregando...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- CAIXA                                                     -->
+    <!-- ======================================================== -->
+    <section id="page-caixa" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Caixa</h2>
+          <p class="page-subtitle" id="caixaSubtitle">Vendas e fluxo de caixa</p>
+        </div>
+        <div id="caixaHeaderActions" style="display:flex;align-items:center;gap:10px"></div>
+      </div>
+
+      <!-- Abas (só admin): Terminal PDV | Histórico de Vendas -->
+      <div class="prom-tabs" id="caixaTabs" role="tablist" style="margin-bottom:var(--space-4)" hidden>
+        <button class="prom-tab prom-tab--active" data-caixa-tab="pdv" role="tab">Terminal (PDV)</button>
+        <button class="prom-tab" data-caixa-tab="vendas" role="tab">Histórico de Vendas</button>
+      </div>
+
+      <div id="caixaPainelPDV">
+
+      <!-- ============================================================ -->
+      <!-- CAIXA FECHADO — bloqueia o PDV até abrir o caixa             -->
+      <!-- ============================================================ -->
+      <div class="pdv-caixa-fechado-wrap" id="caixaFechadoCard" hidden>
+        <div class="pdv-caixa-fechado-inner">
+          <!-- Ilustração SVG caixa registradora com corrente -->
+          <div class="pdv-caixa-fechado-ilustracao">
+            <svg viewBox="0 0 260 260" xmlns="http://www.w3.org/2000/svg" class="pdv-caixa-svg">
+              <!-- fundo circular -->
+              <circle cx="130" cy="130" r="118" fill="#F5ECE3"/>
+              <!-- detalhes decorativos + -->
+              <text x="38" y="68" font-size="18" fill="#DCC7B0" font-weight="bold">+</text>
+              <text x="210" y="58" font-size="18" fill="#DCC7B0" font-weight="bold">+</text>
+              <text x="220" y="185" font-size="14" fill="#DCC7B0" font-weight="bold">+</text>
+              <text x="30" y="190" font-size="14" fill="#DCC7B0" font-weight="bold">+</text>
+              <!-- círculos decorativos -->
+              <circle cx="52" cy="108" r="5" fill="none" stroke="#DCC7B0" stroke-width="2"/>
+              <circle cx="208" cy="108" r="5" fill="none" stroke="#DCC7B0" stroke-width="2"/>
+              <!-- folhas -->
+              <ellipse cx="60" cy="175" rx="18" ry="30" fill="#E0CBB5" transform="rotate(-25 60 175)"/>
+              <ellipse cx="45" cy="168" rx="14" ry="24" fill="#C9A887" transform="rotate(-40 45 168)"/>
+              <ellipse cx="200" cy="175" rx="18" ry="30" fill="#E0CBB5" transform="rotate(25 200 175)"/>
+              <ellipse cx="215" cy="168" rx="14" ry="24" fill="#C9A887" transform="rotate(40 215 168)"/>
+              <!-- corpo da caixa registradora -->
+              <rect x="72" y="108" width="116" height="76" rx="8" fill="#334155"/>
+              <!-- display -->
+              <rect x="82" y="88" width="96" height="28" rx="5" fill="#1E293B"/>
+              <rect x="86" y="92" width="88" height="20" rx="3" fill="#A67C52" opacity="0.3"/>
+              <!-- teclado numérico -->
+              <rect x="84" y="120" width="52" height="40" rx="4" fill="#1E293B"/>
+              <rect x="88" y="124" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="101" y="124" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="114" y="124" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="88" y="134" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="101" y="134" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="114" y="134" width="10" height="7" rx="2" fill="#475569"/>
+              <rect x="88" y="144" width="36" height="7" rx="2" fill="#475569"/>
+              <!-- botão lateral -->
+              <rect x="144" y="120" width="36" height="40" rx="4" fill="#1E293B"/>
+              <rect x="149" y="124" width="26" height="14" rx="2" fill="#22D3EE" opacity="0.4"/>
+              <rect x="149" y="142" width="26" height="7" rx="2" fill="#475569"/>
+              <rect x="149" y="152" width="26" height="5" rx="2" fill="#475569"/>
+              <!-- gaveta -->
+              <rect x="80" y="168" width="100" height="16" rx="4" fill="#1E293B"/>
+              <rect x="118" y="172" width="24" height="4" rx="2" fill="#334155"/>
+              <!-- corrente -->
+              <path d="M88 108 Q70 130 75 160 Q80 185 100 192 Q130 200 160 192 Q180 185 185 160 Q190 130 172 108"
+                    fill="none" stroke="#94A3B8" stroke-width="7" stroke-linecap="round" stroke-dasharray="12 5"/>
+              <!-- cadeado corpo -->
+              <rect x="108" y="170" width="44" height="36" rx="6" fill="#F59E0B"/>
+              <!-- cadeado arco -->
+              <path d="M118 170 v-10 a12 12 0 0 1 24 0 v10" fill="none" stroke="#F59E0B" stroke-width="8" stroke-linecap="round"/>
+              <!-- buraco do cadeado -->
+              <circle cx="130" cy="187" r="5" fill="#D97706"/>
+              <rect x="128" y="187" width="4" height="7" rx="2" fill="#D97706"/>
+            </svg>
+          </div>
+
+          <h2 class="pdv-caixa-fechado-titulo">Caixa Fechado</h2>
+          <p class="pdv-caixa-fechado-desc">Abra o caixa informando o valor inicial em dinheiro (fundo de troco)<br>para começar a registrar vendas.</p>
+
+          <button type="button" class="btn-primary pdv-caixa-fechado-btn" id="btnAbrirCaixaMain">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
+            Abrir Caixa
+          </button>
+
+          <div class="pdv-caixa-fechado-dica">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16" style="flex-shrink:0;color:#8B5E3C"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg>
+            <span>Dica: O fundo de troco é usado para dar troco aos clientes nas vendas.</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================================================ -->
+      <!-- TERMINAL PDV — visível para todos os usuários autenticados   -->
+      <!-- ============================================================ -->
+      <div class="pdv-grid" id="pdvGridWrap" hidden>
+        <div class="pdv-left">
+          <div class="card pdv-terminal-card">
+            <h3 class="pdv-section-title">Terminal do Caixa</h3>
+            <input type="text" id="terminalInput" class="pdv-terminal-input" placeholder="Digite a quantidade e aperte P (ex: 5 + P)" autocomplete="off" spellcheck="false" />
+            <div class="pdv-hint">💡 Dica: aperte a letra do comando (P, Q, D, E, I, T, A, N, O, H, F) pra abrir a janela correspondente. As letras não aparecem digitadas — digite um número antes pra usar como quantidade/item/valor (ex: <strong>5</strong> + <strong>P</strong>, <strong>2</strong> + <strong>D</strong>).</div>
+          </div>
+
+          <div class="card pdv-atalhos-card">
+            <h3 class="pdv-section-title">Atalhos do Terminal</h3>
+            <div class="pdv-atalhos-grid">
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">P</span><strong>Produto</strong><small>Abre busca de produto (Nº = qtd.)</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">Q</span><strong>Quantidade</strong><small>Abre janela pra definir a quantidade</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">E</span><strong>Editar Quantidade</strong><small>Abre lista de itens pra editar</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">D</span><strong>Deletar Item</strong><small>Abre lista de itens pra excluir</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">C</span><strong>Cancelar Compra</strong><small>Abre confirmação e cancela a venda</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">I</span><strong>Desconto Item</strong><small>Abre lista de itens pra dar desconto</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">T</span><strong>Desconto Total</strong><small>Abre janela de desconto (R$/%)</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">A</span><strong>Acréscimo</strong><small>Abre janela de acréscimo (R$/%)</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">N</span><strong>CPF/CNPJ</strong><small>Abre janela pra adicionar CPF/CNPJ</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">O</span><strong>Observação</strong><small>Abre janela de observação</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">H</span><strong>Histórico</strong><small>Abre o histórico de vendas</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">L</span><strong>Limpar Terminal</strong><small>Limpa o texto do terminal</small></div>
+              <div class="pdv-atalho-card"><span class="pdv-atalho-letra">F</span><strong>Finalizar Venda</strong><small>Finaliza a venda atual</small></div>
+            </div>
+            <p class="pdv-atalhos-legenda">Letra = ação instantânea&nbsp;·&nbsp;Número antes = quantidade/item/valor&nbsp;·&nbsp;↑↓ navegam&nbsp;·&nbsp;Esc cancela&nbsp;·&nbsp;O terminal permanece sempre focado</p>
+          </div>
+        </div>
+
+        <div class="pdv-right">
+          <div class="card pdv-itens-card">
+            <div class="pdv-itens-header">
+              <h3 class="pdv-section-title">Itens da Venda</h3>
+              <button type="button" class="btn-ghost pdv-btn-limpar" id="btnLimparItensPDV">
+                <svg viewBox="0 0 20 20" fill="currentColor" width="14" height="14"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+                Limpar Tudo
+              </button>
+            </div>
+            <div class="table-wrap pdv-itens-tablewrap">
+              <table class="data-table">
+                <thead>
+                  <tr><th>#</th><th>Produto</th><th>Qtd.</th><th>Unitário</th><th>Desconto</th><th>Total</th><th></th></tr>
+                </thead>
+                <tbody id="tbodyItensPDV">
+                  <tr><td colspan="7" class="empty-cell">Nenhum item na venda. Use o terminal para adicionar produtos.</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card pdv-resumo-card">
+            <h3 class="pdv-section-title">Resumo da Venda</h3>
+            <div class="pdv-resumo-linha"><span>Subtotal</span><strong id="pdvSubtotal">R$ 0,00</strong></div>
+            <div class="pdv-resumo-linha"><span>Desconto nos itens</span><strong id="pdvDescontoItens" class="pdv-valor-neg">R$ 0,00</strong></div>
+            <div class="pdv-resumo-linha"><span>Desconto total</span><strong id="pdvDescontoTotalView" class="pdv-valor-neg">R$ 0,00</strong></div>
+            <div class="pdv-resumo-linha"><span>Acréscimo</span><strong id="pdvAcrescimoView" class="pdv-valor-pos">R$ 0,00</strong></div>
+            <div class="pdv-resumo-total"><span>TOTAL</span><strong id="pdvTotalGeral">R$ 0,00</strong></div>
+
+            <div class="pdv-desconto-controls">
+              <div>
+                <label class="field-label">Desconto Total (T)</label>
+                <div class="pdv-toggle-input">
+                  <button type="button" class="pdv-toggle-btn pdv-toggle-btn--active" data-target="descontoTotal" data-tipo="rs">R$</button>
+                  <button type="button" class="pdv-toggle-btn" data-target="descontoTotal" data-tipo="pct">%</button>
+                  <input type="number" id="inputDescontoTotal" class="field-input--plain" min="0" step="0.01" value="0" />
+                </div>
+              </div>
+              <div>
+                <label class="field-label">Acréscimo (A)</label>
+                <div class="pdv-toggle-input">
+                  <button type="button" class="pdv-toggle-btn pdv-toggle-btn--active" data-target="acrescimo" data-tipo="rs">R$</button>
+                  <button type="button" class="pdv-toggle-btn" data-target="acrescimo" data-tipo="pct">%</button>
+                  <input type="number" id="inputAcrescimo" class="field-input--plain" min="0" step="0.01" value="0" />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card pdv-pagamento-card">
+            <h3 class="pdv-section-title">Pagamento</h3>
+            <label class="field-label">Forma de pagamento</label>
+            <select id="pdvFormaPag" class="field-input--plain">
+              <option>Dinheiro</option><option>PIX</option>
+              <option>Cartão de Débito</option><option>Cartão de Crédito</option>
+              <option>Fiado</option>
+              <option value="Múltiplo">Múltiplo (dividir pagamento)</option>
+            </select>
+
+            <div id="pdvDinheiroBox" class="pdv-grid-2">
+              <div>
+                <label class="field-label">Valor recebido</label>
+                <input type="number" id="pdvValorRecebido" class="field-input--plain" min="0" step="0.01" placeholder="0,00" />
+              </div>
+              <div>
+                <label class="field-label">Troco</label>
+                <div class="pdv-troco" id="pdvTroco">R$ 0,00</div>
+              </div>
+            </div>
+
+            <div id="pdvFiadoBox" hidden>
+              <label class="field-label">Cliente (Fiado)</label>
+              <div class="pdv-busca-input-wrap">
+                <input type="text" id="pdvClienteInput" class="field-input--plain" placeholder="Digite o nome do cliente..." autocomplete="off" />
+              </div>
+              <div id="pdvClienteSugestoes" class="pdv-sugestoes-list" hidden></div>
+              <div id="pdvClienteNaoEncontrado" class="pdv-cliente-aviso" hidden>
+                <span>Cliente não encontrado.</span>
+                <button type="button" class="btn-primary" id="btnNovoClienteFiado">+ Novo Cliente</button>
+              </div>
+              <div id="pdvClienteSelecionado" class="pdv-cliente-chip" hidden></div>
+            </div>
+
+            <div id="pdvSplitBox" hidden>
+              <label class="field-label">Dividir pagamento entre formas</label>
+              <div id="pdvSplitRows" class="pdv-split-rows"></div>
+              <button type="button" class="btn-ghost pdv-split-add" id="btnSplitAddLinha">+ Adicionar forma de pagamento</button>
+              <div class="pdv-split-resumo">
+                <div class="pdv-split-resumo-linha"><span>Total da venda</span><strong id="pdvSplitTotalVenda">R$ 0,00</strong></div>
+                <div class="pdv-split-resumo-linha"><span>Somado até agora</span><strong id="pdvSplitSomado">R$ 0,00</strong></div>
+                <div class="pdv-split-resumo-linha pdv-split-resumo-linha--restante"><span>Restante</span><strong id="pdvSplitRestante">R$ 0,00</strong></div>
+              </div>
+            </div>
+
+            <div class="pdv-extra-fields">
+              <div>
+                <label class="field-label">CPF/CNPJ (N)</label>
+                <input type="text" id="pdvCpfCnpj" class="field-input--plain" placeholder="Opcional" />
+              </div>
+              <div>
+                <label class="field-label">Observação (O)</label>
+                <input type="text" id="pdvObservacao" class="field-input--plain" placeholder="Opcional" />
+              </div>
+            </div>
+
+            <button type="button" class="btn-primary pdv-btn-finalizar" id="btnFinalizarVendaPDV">
+              <svg viewBox="0 0 20 20" fill="currentColor" width="18" height="18"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/><path d="M16 16.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM6.5 18a1.5 1.5 0 100-3 1.5 1.5 0 000 3z"/></svg>
+              Finalizar Venda (Enter)
+            </button>
+          </div>
+        </div>
+      </div>
+      </div><!-- /caixaPainelPDV -->
+
+      <!-- ============================================================ -->
+      <!-- HISTÓRICO DE VENDAS (por dia) — montado por js/vendas.js      -->
+      <!-- ============================================================ -->
+      <div id="caixaPainelVendas" hidden>
+        <div class="card" style="padding:var(--space-4) var(--space-5);margin-bottom:var(--space-4)">
+          <div class="filter-bar">
+            <button class="btn-ghost" id="vendDiaAnt" type="button" title="Dia anterior">◀</button>
+            <input type="date" id="vendDia" class="field-input--plain" style="min-width:160px" />
+            <button class="btn-ghost" id="vendDiaProx" type="button" title="Próximo dia">▶</button>
+            <button class="btn-ghost" id="vendHoje" type="button">Hoje</button>
+            <select id="vendFiltroForma" class="field-input--plain" style="min-width:170px"><option value="">Todas as formas</option></select>
+            <input type="text" id="vendBusca" class="field-input--plain" placeholder="Filtrar: nº, cliente, produto, operador..." style="flex:1" autocomplete="off" />
+            <button class="btn-ghost" id="vendExportar" type="button">Exportar Excel</button>
+          </div>
+          <p id="vendDiaLabel" style="margin-top:var(--space-3);font-size:var(--text-sm);color:var(--gray-500);text-transform:capitalize"></p>
+        </div>
+        <div id="vendConteudo"></div>
+      </div>
+    </section>
+
+    <!-- ======================================================== -->
+    <!-- RELATÓRIOS                                                -->
+    <!-- ======================================================== -->
+    <section id="page-relatorios" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Relatórios</h2>
+          <p class="page-subtitle">Análises e exportações gerenciais</p>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn-ghost" id="btnImprimirRel">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9h8v4H6v-4zm7-4a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/></svg>
+            Imprimir
+          </button>
+          <button class="btn-ghost" id="btnExportarRel">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Exportar Excel
+          </button>
+          <button class="btn-primary" id="btnGerarRel">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+            Atualizar
+          </button>
+        </div>
+      </div>
+
+      <!-- Filtro de período -->
+      <div class="card" style="padding:var(--space-4) var(--space-5)">
+        <div class="filter-bar">
+          <label style="font-size:var(--text-sm);color:var(--gray-600);font-weight:500">Período:</label>
+          <input type="date" id="relDataIni" class="field-input--plain" style="min-width:140px" />
+          <span style="color:var(--gray-400);font-size:var(--text-sm)">até</span>
+          <input type="date" id="relDataFim" class="field-input--plain" style="min-width:140px" />
+        </div>
+      </div>
+
+      <!-- Abas de relatório -->
+      <div class="prom-tabs" role="tablist" style="margin-bottom:var(--space-4)">
+        <button class="prom-tab prom-tab--active rel-tab--active" data-rel-tab="vendas" role="tab">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/></svg>
+          Vendas
+        </button>
+        <button class="prom-tab" data-rel-tab="produtos" role="tab">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg>
+          Produtos
+        </button>
+        <button class="prom-tab" data-rel-tab="compras" role="tab">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+          Compras
+        </button>
+        <button class="prom-tab" data-rel-tab="promissoria" role="tab">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+          Promissórias
+        </button>
+        <button class="prom-tab" data-rel-tab="caixa" role="tab">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+          Caixa
+        </button>
+      </div>
+
+      <!-- Painel: Vendas -->
+      <div data-rel-painel="vendas">
+        <div class="stats-grid" style="margin-bottom:var(--space-4)">
+          <div class="stat-card stat-card--blue"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M3 1a1 1 0 000 2h1.22l.305 1.222a.997.997 0 00.01.042l1.358 5.43-.893.892C3.74 11.846 4.632 14 6.414 14H15a1 1 0 000-2H6.414l1-1H14a1 1 0 00.894-.553l3-6A1 1 0 0017 3H6.28l-.31-1.243A1 1 0 005 1H3z"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total de Vendas</span><strong class="stat-card__value stat-card__value--sm" id="relVendasQtd">—</strong></div></div>
+          <div class="stat-card stat-card--green"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Faturamento</span><strong class="stat-card__value stat-card__value--sm" id="relVendasTotal">—</strong></div></div>
+          <div class="stat-card stat-card--purple"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a8 8 0 100 16A8 8 0 0010 2zM6.94 6.94a1 1 0 011.414 0L10 9.586l1.646-1.646a1 1 0 111.414 1.414L11.414 11l1.646 1.646a1 1 0 01-1.414 1.414L10 12.414l-1.646 1.646a1 1 0 01-1.414-1.414L8.586 11 6.94 9.354a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Ticket Médio</span><strong class="stat-card__value stat-card__value--sm" id="relVendasTicket">—</strong></div></div>
+          <div class="stat-card stat-card--red"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Cancelamentos</span><strong class="stat-card__value stat-card__value--sm" id="relVendasCancel">—</strong></div></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 340px;gap:var(--space-4);margin-bottom:var(--space-4)">
+          <div class="card prom-chart-card prom-chart-card--lg"><div class="card-header"><h3 class="card-section-title">Vendas por Dia (últimos 14 dias)</h3></div><div class="prom-chart-wrap prom-chart-wrap--lg"><canvas id="chartRelVendasDia"></canvas></div></div>
+          <div class="card prom-chart-card"><div class="card-header"><h3 class="card-section-title">Por Forma de Pagamento</h3></div><div class="prom-chart-wrap"><canvas id="chartRelForma"></canvas></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-section-title">Lista de Vendas</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>#</th><th>Data</th><th>Operador</th><th>Forma Pagamento</th><th>Total</th></tr></thead>
+              <tbody id="tbodyRelVendas"><tr><td colspan="5" class="loading-cell">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel: Produtos -->
+      <div data-rel-painel="produtos" hidden>
+        <div class="stats-grid" style="margin-bottom:var(--space-4)">
+          <div class="stat-card stat-card--blue"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total Produtos</span><strong class="stat-card__value stat-card__value--sm" id="relProdTotal">—</strong></div></div>
+          <div class="stat-card stat-card--purple"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Valor Inventário</span><strong class="stat-card__value stat-card__value--sm" id="relProdInv">—</strong></div></div>
+          <div class="stat-card stat-card--gold"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Estoque Baixo</span><strong class="stat-card__value stat-card__value--sm" id="relProdBaixo">—</strong></div></div>
+          <div class="stat-card stat-card--red"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Sem Estoque</span><strong class="stat-card__value stat-card__value--sm" id="relProdSem">—</strong></div></div>
+        </div>
+        <div class="card prom-chart-card prom-chart-card--lg" style="margin-bottom:var(--space-4)"><div class="card-header"><h3 class="card-section-title">Inventário por Categoria</h3></div><div class="prom-chart-wrap prom-chart-wrap--lg"><canvas id="chartRelCat"></canvas></div></div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-section-title">Lista de Produtos (críticos primeiro)</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Produto</th><th>Categoria</th><th style="text-align:center">Estoque</th><th style="text-align:center">Mínimo</th><th>Preço Venda</th><th>Preço Custo</th><th>Valor Inventário</th></tr></thead>
+              <tbody id="tbodyRelProdutos"><tr><td colspan="7" class="loading-cell">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel: Compras -->
+      <div data-rel-painel="compras" hidden>
+        <div class="stats-grid" style="margin-bottom:var(--space-4)">
+          <div class="stat-card stat-card--blue"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total de Compras</span><strong class="stat-card__value stat-card__value--sm" id="relCompTotal">—</strong></div></div>
+          <div class="stat-card stat-card--green"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total Pago</span><strong class="stat-card__value stat-card__value--sm" id="relCompPago">—</strong></div></div>
+          <div class="stat-card stat-card--gold"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total Pendente</span><strong class="stat-card__value stat-card__value--sm" id="relCompPend">—</strong></div></div>
+          <div class="stat-card stat-card--red"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Em Atraso</span><strong class="stat-card__value stat-card__value--sm" id="relCompAtraso">—</strong></div></div>
+        </div>
+        <div class="card prom-chart-card prom-chart-card--lg" style="margin-bottom:var(--space-4)"><div class="card-header"><h3 class="card-section-title">Top Fornecedores por Valor</h3></div><div class="prom-chart-wrap prom-chart-wrap--lg"><canvas id="chartRelForn"></canvas></div></div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-section-title">Lista de Compras</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Fornecedor</th><th>Descrição</th><th>Data</th><th>Vencimento</th><th>Total</th><th>Status</th></tr></thead>
+              <tbody id="tbodyRelCompras"><tr><td colspan="6" class="loading-cell">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel: Promissórias -->
+      <div data-rel-painel="promissoria" hidden>
+        <div class="stats-grid" style="margin-bottom:var(--space-4)">
+          <div class="stat-card stat-card--blue"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total Vendido</span><strong class="stat-card__value stat-card__value--sm" id="relPromVend">—</strong></div></div>
+          <div class="stat-card stat-card--green"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total Recebido</span><strong class="stat-card__value stat-card__value--sm" id="relPromRec">—</strong></div></div>
+          <div class="stat-card stat-card--gold"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Total em Aberto</span><strong class="stat-card__value stat-card__value--sm" id="relPromAberto">—</strong></div></div>
+          <div class="stat-card stat-card--red"><div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg></div><div class="stat-card__body"><span class="stat-card__label">Inadimplentes</span><strong class="stat-card__value stat-card__value--sm" id="relPromInad">—</strong></div></div>
+        </div>
+        <div class="card">
+          <div class="card-header"><h3 class="card-section-title">Clientes — Saldo Devedor</h3></div>
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead><tr><th>Cliente</th><th>Telefone</th><th>Total Comprado</th><th>Total Pago</th><th>Saldo Devedor</th><th>Situação</th></tr></thead>
+              <tbody id="tbodyRelProm"><tr><td colspan="6" class="loading-cell">Carregando...</td></tr></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Painel: Caixa -->
+      <div data-rel-painel="caixa" hidden>
+        <div style="display:flex;justify-content:flex-end;gap:8px;margin-bottom:var(--space-4)">
+          <button class="btn-ghost" id="btnImprimirCaixa">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M5 4v3H4a2 2 0 00-2 2v3a2 2 0 002 2h1v2a1 1 0 001 1h8a1 1 0 001-1v-2h1a2 2 0 002-2V9a2 2 0 00-2-2h-1V4a1 1 0 00-1-1H6a1 1 0 00-1 1zm2 0h6v3H7V4zm-1 9h8v4H6v-4zm7-4a1 1 0 11-2 0 1 1 0 012 0z" clip-rule="evenodd"/></svg>
+            Imprimir
+          </button>
+          <button class="btn-ghost" id="btnExportarCaixa">
+            <svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+            Exportar Excel
+          </button>
+          <button class="btn-primary" id="btnLancamento">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+            Novo Lançamento
+          </button>
+        </div>
+        <div class="stats-grid" style="margin-bottom:var(--space-4)">
+          <div class="stat-card stat-card--green">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 9.707a1 1 0 010-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 01-1.414 1.414L11 7.414V15a1 1 0 11-2 0V7.414L6.707 9.707a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Entradas Hoje</span><strong class="stat-card__value" id="indEntradasHoje">—</strong></div>
+          </div>
+          <div class="stat-card stat-card--red">
+            <div class="stat-card__icon"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 10.293a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 111.414-1.414L9 12.586V5a1 1 0 012 0v7.586l2.293-2.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Saídas Hoje</span><strong class="stat-card__value" id="indSaidasHoje">—</strong></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="background:var(--blue-50);color:var(--blue-600)"><svg viewBox="0 0 20 20" fill="currentColor"><path d="M8.433 7.418c.155-.103.346-.196.567-.267v1.698a2.305 2.305 0 01-.567-.267C8.07 8.34 8 8.114 8 8c0-.114.07-.34.433-.582zM11 12.849v-1.698c.22.071.412.164.567.267.364.243.433.468.433.582 0 .114-.07.34-.433.582a2.305 2.305 0 01-.567.267z"/><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-13a1 1 0 10-2 0v.092a4.535 4.535 0 00-1.676.662C6.602 6.234 6 7.009 6 8c0 .99.602 1.765 1.324 2.246.48.32 1.054.545 1.676.662v1.941c-.391-.127-.68-.317-.843-.504a1 1 0 10-1.51 1.31c.562.649 1.413 1.076 2.353 1.253V15a1 1 0 102 0v-.092a4.535 4.535 0 001.676-.662C13.398 13.766 14 12.991 14 12c0-.99-.602-1.765-1.324-2.246A4.535 4.535 0 0011 9.092V7.151c.391.127.68.317.843.504a1 1 0 101.511-1.31c-.563-.649-1.413-1.076-2.354-1.253V5z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Saldo Hoje</span><strong class="stat-card__value" id="indSaldoHoje">—</strong></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-card__icon" style="background:#EDE9FE;color:#7C3AED"><svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg></div>
+            <div class="stat-card__body"><span class="stat-card__label">Saldo no Mês</span><strong class="stat-card__value" id="indSaldoMes">—</strong></div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:var(--space-4) var(--space-5);margin-bottom:var(--space-4)">
+          <div class="filter-bar">
+            <input type="date" id="filtroDataIniCaixa" class="field-input--plain" style="min-width:140px" />
+            <span style="color:var(--gray-400);font-size:var(--text-sm)">até</span>
+            <input type="date" id="filtroDataFimCaixa" class="field-input--plain" style="min-width:140px" />
+            <select id="filtroTipoCaixa" class="field-input--plain" style="min-width:160px">
+              <option value="todos">Entradas e Saídas</option>
+              <option value="entrada">Somente Entradas</option>
+              <option value="saida">Somente Saídas</option>
+            </select>
+            <button class="btn-primary" id="btnFiltrarCaixa">Filtrar</button>
+            <button class="btn-ghost" id="btnLimparCaixa">Limpar</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="table-wrap">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Data / Hora</th><th>Tipo</th><th>Descrição</th>
+                  <th>Categoria</th><th>Forma</th><th>Valor</th>
+                </tr>
+              </thead>
+              <tbody id="tbodyCaixa">
+                <tr><td colspan="6" class="loading-cell">Carregando...</td></tr>
+              </tbody>
+              <tfoot id="tfootCaixa"></tfoot>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+    <!-- ======================================================== -->
+    <section id="page-configuracoes" class="page" hidden>
+      <div class="page-header">
+        <div>
+          <h2 class="page-title">Configurações</h2>
+          <p class="page-subtitle">Gerenciamento de usuários do sistema</p>
+        </div>
+        <button class="btn-primary" id="btnNovoUsuario">
+          <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd"/></svg>
+          Novo Usuário
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <h3 class="card-section-title">Usuários do Sistema</h3>
+        </div>
+        <div class="table-wrap">
+          <table class="data-table">
+            <thead><tr><th>Nome</th><th>E-mail</th><th>Cargo</th><th>Criado em</th><th class="col-center">Ações</th></tr></thead>
+            <tbody id="tbodyUsuarios"><tr><td colspan="5" class="loading-cell">Carregando...</td></tr></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="card" style="padding:var(--space-5)">
+        <h3 class="card-section-title" style="margin-bottom:var(--space-4)">Sobre o Sistema</h3>
+        <p style="font-size:var(--text-sm);color:var(--gray-500);line-height:1.7">
+          <strong>Gerência Viviane Vargas Stories</strong> — Sistema de Gestão v2.0<br>
+          Módulos: Dashboard · Produtos · Clientes · Vendas · Compras · Caixa · Relatórios · Promissórias · Configurações<br>
+          Backend: Firebase (Firestore + Auth) · Deploy: Vercel
+        </p>
+      </div>
+    </section>
+
+  </main><!-- /content-area -->
+
+  <!-- Bottom Nav Mobile -->
+  <nav class="mobile-bottom-nav" aria-label="Navegação mobile">
+    <div class="mobile-bottom-nav-inner">
+      <button class="mobile-nav-item" data-page="dashboard">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"/><path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"/></svg>
+        Dashboard
+      </button>
+      <button class="mobile-nav-item" data-page="produtos">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 2a4 4 0 00-4 4v1H5a1 1 0 00-.994.89l-1 9A1 1 0 004 18h12a1 1 0 00.994-1.11l-1-9A1 1 0 0015 7h-1V6a4 4 0 00-4-4zm2 5V6a2 2 0 10-4 0v1h4z" clip-rule="evenodd"/></svg>
+        Produtos
+      </button>
+      <button class="mobile-nav-item" data-page="caixa">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
+        Caixa
+      </button>
+      <button class="mobile-nav-item nav-item-admin" data-page="promissoria" hidden>
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 00-2 2v4a2 2 0 002 2V6h10a2 2 0 00-2-2H4zm2 6a2 2 0 012-2h8a2 2 0 012 2v4a2 2 0 01-2 2H8a2 2 0 01-2-2v-4zm6 4a2 2 0 100-4 2 2 0 000 4z" clip-rule="evenodd"/></svg>
+        Promiss.
+      </button>
+      <button class="mobile-nav-item nav-item-admin" data-page="configuracoes" hidden>
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 01-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.532 1.532 0 01.947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.532 1.532 0 012.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 012.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 01.947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 01-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 01-2.287-.947zM10 13a3 3 0 100-6 3 3 0 000 6z" clip-rule="evenodd"/></svg>
+        Config.
+      </button>
+    </div>
+  </nav>
+
+</div><!-- /main-wrap -->
+</div><!-- /appShell -->
+
+<!-- Modal global -->
+<div id="modalBackdrop">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitulo">
+    <div class="modal-header">
+      <span class="modal-title" id="modalTitulo">Modal</span>
+      <button class="modal-close" id="btnFecharModal" aria-label="Fechar">
+        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/></svg>
+      </button>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer" id="modalFooter"></div>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div id="toastContainer" aria-live="polite"></div>
+
+<!-- ============================================================ -->
+<!-- SCRIPTS                                                       -->
+<!-- ============================================================ -->
+<script type="module">
+import { auth, db }    from "./js/firebase-config.js";
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { doc, getDoc, collection, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+import { formatarMoeda, escHtml } from "./js/database.js";
+import { iniciarProdutos }    from "./js/produtos.js";
+import { iniciarClientes }    from "./js/clientes.js";
+import { iniciarPromissoria } from "./js/promissoria.js";
+import { iniciarCompras }     from "./js/compras.js";
+import { iniciarDespesas }    from "./js/despesas.js";
+import { iniciarCaixa }       from "./js/caixa.js";
+import { iniciarVendas }      from "./js/vendas.js";
+import { iniciarRelatorios }  from "./js/relatorios.js";
+
+// ── Globais necessários ────────────────────────────────────────
+window.abrirModal = function(titulo, bodyHTML, footerHTML = "") {
+  document.getElementById("modalTitulo").textContent = titulo;
+  document.getElementById("modalBody").innerHTML     = bodyHTML;
+  document.getElementById("modalFooter").innerHTML   = footerHTML;
+  document.getElementById("modalBackdrop").style.display = "flex";
+  document.body.style.overflow = "hidden";
+};
+window.fecharModal = function() {
+  document.getElementById("modalBackdrop").style.display = "none";
+  document.body.style.overflow = "";
+};
+window.mostrarToast = function(msg, tipo = "success", dur = 4000) {
+  const c = document.getElementById("toastContainer");
+  const icons = {
+    success: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>`,
+    error:   `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`,
+    warning: `<svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>`
+  };
+  const t = document.createElement("div");
+  const id = `t${Date.now()}`;
+  t.id = id; t.className = `toast toast--${tipo}`;
+  t.innerHTML = `<span class="toast-icon">${icons[tipo]||icons.success}</span><span class="toast-msg">${msg}</span><button class="toast-close">×</button>`;
+  c.appendChild(t);
+  requestAnimationFrame(() => t.classList.add("toast--show"));
+  const rm = () => { t.classList.remove("toast--show"); setTimeout(() => t.remove(), 300); };
+  t.querySelector(".toast-close").addEventListener("click", rm);
+  setTimeout(rm, dur);
+};
+
+// ── Modal fechar ───────────────────────────────────────────────
+document.getElementById("btnFecharModal").addEventListener("click", window.fecharModal);
+document.getElementById("modalBackdrop").addEventListener("click", (e) => {
+  if (e.target === document.getElementById("modalBackdrop")) window.fecharModal();
+});
+
+// ── Toggle valores ─────────────────────────────────────────────
+(function() {
+  const btn = document.getElementById("btnToggleValores");
+  const KEY = "mj_valores_ocultos";
+  const SVG_ON  = `<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>`;
+  const SVG_OFF = `<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>`;
+  const set = (oculto) => {
+    document.body.classList.toggle("valores-ocultos", oculto);
+    btn.innerHTML = oculto ? SVG_OFF : SVG_ON;
+    btn.title = oculto ? "Mostrar valores" : "Ocultar valores";
+  };
+  set(localStorage.getItem(KEY) === "1");
+  btn.addEventListener("click", () => {
+    const novo = !document.body.classList.contains("valores-ocultos");
+    set(novo); localStorage.setItem(KEY, novo ? "1" : "0");
+  });
+})();
+
+// ── Navegação ──────────────────────────────────────────────────
+const titulos = {
+  dashboard: "Dashboard", produtos: "Produtos / Estoque",
+  clientes: "Clientes", promissoria: "Promissórias", configuracoes: "Configurações",
+  vendas: "Vendas", compras: "Compras", despesas: "Despesas", caixa: "Caixa", relatorios: "Relatórios"
+};
+
+function navegar(pageId) {
+  document.querySelectorAll(".page").forEach(p => {
+    p.hidden = true; p.classList.remove("page--active");
+  });
+  const target = document.getElementById("page-" + pageId);
+  if (target) { target.hidden = false; target.classList.add("page--active"); }
+
+  document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("nav-item--active"));
+  document.querySelectorAll(`[data-page="${pageId}"]`).forEach(el => {
+    if (el.classList.contains("nav-item")) el.classList.add("nav-item--active");
+  });
+
+  document.querySelectorAll(".mobile-nav-item").forEach(el => {
+    el.classList.toggle("mobile-nav-item--active", el.dataset.page === pageId);
+  });
+
+  document.getElementById("topbarTitle").textContent = titulos[pageId] || pageId;
+  fecharSidebar();
+  document.dispatchEvent(new CustomEvent("navegacao", { detail: { page: pageId } }));
+}
+window.navegar = navegar;
+
+// Cliques em [data-page]
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-page]");
+  if (el && !el.classList.contains("nav-item-admin-disabled")) {
+    e.preventDefault();
+    navegar(el.dataset.page);
+  }
+});
+
+// ── Sidebar mobile ─────────────────────────────────────────────
+function fecharSidebar() {
+  document.getElementById("sidebar").classList.remove("sidebar--open");
+  document.getElementById("sidebarOverlay").classList.remove("overlay--visible");
+}
+document.getElementById("btnAbrirSidebar").addEventListener("click", () => {
+  document.getElementById("sidebar").classList.add("sidebar--open");
+  document.getElementById("sidebarOverlay").classList.add("overlay--visible");
+});
+document.getElementById("btnFecharSidebar").addEventListener("click", fecharSidebar);
+document.getElementById("sidebarOverlay").addEventListener("click", fecharSidebar);
+
+// ── Login ──────────────────────────────────────────────────────
+document.getElementById("btnEntrar").addEventListener("click", fazerLogin);
+document.getElementById("loginSenha").addEventListener("keydown", (e) => { if (e.key === "Enter") fazerLogin(); });
+
+async function fazerLogin() {
+  const email = document.getElementById("loginEmail").value.trim();
+  const senha  = document.getElementById("loginSenha").value;
+  const erro   = document.getElementById("loginErro");
+  const btn    = document.getElementById("btnEntrar");
+
+  if (!email || !senha) { mostrarErroLogin("Preencha e-mail e senha."); return; }
+  btn.disabled = true; btn.textContent = "Entrando...";
+  erro.hidden = true;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, senha);
+  } catch (err) {
+    btn.disabled = false; btn.textContent = "Entrar";
+    const msgs = {
+      "auth/user-not-found":  "Usuário não encontrado.",
+      "auth/wrong-password":  "Senha incorreta.",
+      "auth/invalid-email":   "E-mail inválido.",
+      "auth/too-many-requests": "Muitas tentativas. Tente mais tarde.",
+      "auth/invalid-credential": "E-mail ou senha incorretos."
+    };
+    mostrarErroLogin(msgs[err.code] || "Erro ao fazer login.");
+  }
+}
+
+function mostrarErroLogin(msg) {
+  const el = document.getElementById("loginErro");
+  el.textContent = msg; el.hidden = false;
+}
+
+// ── Logout ─────────────────────────────────────────────────────
+document.getElementById("btnLogout").addEventListener("click", async () => {
+  await signOut(auth);
+});
+
+// ── Auth state ─────────────────────────────────────────────────
+let _usuario = null, _dadosUsuario = null, _modulosIniciados = false;
+
+onAuthStateChanged(auth, async (user) => {
+  if (user) {
+    _usuario = user;
+    document.getElementById("page-login").style.display = "none";
+    document.getElementById("appShell").hidden = false;
+
+    try {
+      const snap = await getDoc(doc(db, "mj_usuarios", user.uid));
+      if (snap.exists()) {
+        _dadosUsuario = snap.data();
+      } else {
+        // Primeiro acesso: criar doc de admin
+        _dadosUsuario = { nome: user.displayName || user.email.split("@")[0], email: user.email, role: "admin", criadoEm: serverTimestamp() };
+        await setDoc(doc(db, "mj_usuarios", user.uid), _dadosUsuario);
+      }
+    } catch (err) {
+      console.error("Erro ao buscar dados do usuário:", err);
+      _dadosUsuario = { nome: user.email, email: user.email, role: "funcionario" };
+    }
+
+    // Atualizar UI
+    const nome  = _dadosUsuario.nome || user.email;
+    const role  = _dadosUsuario.role || "funcionario";
+    document.getElementById("userName").textContent   = nome;
+    document.getElementById("userRole").textContent   = role === "admin" ? "Administrador" : "Funcionário";
+    document.getElementById("userAvatar").textContent = nome.charAt(0).toUpperCase();
+
+    // Exibir itens admin
+    if (role === "admin") {
+      document.querySelectorAll(".nav-item-admin").forEach(el => el.hidden = false);
+      document.getElementById("dashAdminCards").hidden      = false;
+      document.getElementById("dashFuncionarioCards").hidden = true;
+    } else {
+      document.getElementById("dashAdminCards").hidden      = true;
+      document.getElementById("dashFuncionarioCards").hidden = false;
+    }
+
+    // Iniciar módulos (uma única vez)
+    if (!_modulosIniciados) {
+      _modulosIniciados = true;
+      iniciarProdutos(user, _dadosUsuario);
+      iniciarClientes(user, _dadosUsuario);
+      iniciarPromissoria(user, _dadosUsuario);
+      iniciarCompras(user, _dadosUsuario);
+      iniciarDespesas(user, _dadosUsuario);
+      iniciarCaixa(user, _dadosUsuario);
+      iniciarVendas(user, _dadosUsuario);
+      iniciarRelatorios(user, _dadosUsuario);
+      iniciarConfiguracoes(user, _dadosUsuario);
+    }
+
+    navegar("dashboard");
+    carregarDashboard(role);
+
+  } else {
+    _usuario = null; _dadosUsuario = null; _modulosIniciados = false;
+    document.getElementById("page-login").style.display = "flex";
+    document.getElementById("appShell").hidden = true;
+    document.getElementById("btnEntrar").disabled = false;
+    document.getElementById("btnEntrar").textContent = "Entrar";
+  }
+});
+
+// ── Dashboard ──────────────────────────────────────────────────
+async function carregarDashboard(role) {
+  try {
+    const [prodSnap, cliSnap, compSnap, pagSnap] = await Promise.all([
+      getDocs(collection(db, "mj_produtos")),
+      role === "admin" ? getDocs(collection(db, "mj_clientes")) : Promise.resolve({ size: 0 }),
+      role === "admin" ? getDocs(collection(db, "prom_compras")) : Promise.resolve({ forEach: ()=>{} }),
+      role === "admin" ? getDocs(collection(db, "prom_pagamentos")) : Promise.resolve({ forEach: ()=>{} })
+    ]);
+
+    // ── Alertas de estoque ──────────────────────────────────
+    const alertasEstoqueCritico = [];  // estoque = 0
+    const alertasEstoqueBaixo   = [];  // estoque > 0 mas <= mínimo
+
+    let abaixoMinimo = 0;
+    prodSnap.forEach(d => {
+      const p = { id: d.id, ...d.data() };
+      const estoque = p.estoque ?? 0;
+      const minimo  = p.estoqueMinimo ?? 0;
+
+      // Estoque
+      if (estoque === 0) {
+        alertasEstoqueCritico.push(p);
+        abaixoMinimo++;
+      } else if (minimo > 0 && estoque <= minimo) {
+        alertasEstoqueBaixo.push(p);
+        abaixoMinimo++;
+      }
+    });
+
+    renderAlertas({ alertasEstoqueCritico, alertasEstoqueBaixo });
+
+    // ── KPIs ────────────────────────────────────────────────
+    const el = id => document.getElementById(id);
+    if (el("dashTotalProdutos"))  el("dashTotalProdutos").textContent  = prodSnap.size;
+    if (el("dashFuncProdutos"))   el("dashFuncProdutos").textContent   = prodSnap.size;
+    if (el("dashFuncBaixo"))      el("dashFuncBaixo").textContent      = abaixoMinimo;
+
+    if (role === "admin") {
+      if (el("dashTotalClientes")) el("dashTotalClientes").textContent = cliSnap.size;
+      let totalV = 0, totalP = 0, inad = 0;
+      const saldoMap = {};
+      const agora = new Date();
+      compSnap.forEach(d => {
+        const c = d.data();
+        totalV += c.valor || 0;
+        if (!saldoMap[c.clienteId]) saldoMap[c.clienteId] = { c:0, p:0, v:false };
+        saldoMap[c.clienteId].c += c.valor || 0;
+        if (c.vencimento) { const vd = c.vencimento.toDate?.() || new Date(c.vencimento); if (vd<agora) saldoMap[c.clienteId].v=true; }
+      });
+      pagSnap.forEach(d => {
+        const p = d.data();
+        totalP += p.valor || 0;
+        if (!saldoMap[p.clienteId]) saldoMap[p.clienteId] = { c:0, p:0, v:false };
+        saldoMap[p.clienteId].p += p.valor || 0;
+      });
+      Object.values(saldoMap).forEach(s => { if (s.c-s.p > 0 && s.v) inad++; });
+      if (el("dashTotalAberto"))    el("dashTotalAberto").textContent    = formatarMoeda(Math.max(0, totalV-totalP));
+      if (el("dashInadimplentes"))  el("dashInadimplentes").textContent  = inad;
+    }
+  } catch (err) { console.error("Erro no dashboard:", err); }
+}
+
+function renderAlertas({ alertasEstoqueCritico, alertasEstoqueBaixo }) {
+  const cont = document.getElementById("dashAlertas");
+  if (!cont) return;
+
+  const blocos = [];
+
+  // ── Estoque zerado ───────────────────────────────────────
+  if (alertasEstoqueCritico.length) {
+    blocos.push(criarBlocoAlerta({
+      cor: "vermelho",
+      icone: "🚫",
+      titulo: `${alertasEstoqueCritico.length} produto${alertasEstoqueCritico.length>1?"s":""} sem estoque`,
+      subtitulo: "Esses produtos não podem mais ser vendidos.",
+      itens: alertasEstoqueCritico,
+      renderItem: p => `<span class="dash-alerta-item"><strong>${escHtml(p.nome)}</strong> — estoque: 0${p.estoqueMinimo>0?" · mínimo: "+p.estoqueMinimo:""}</span>`
+    }));
+  }
+
+  // ── Estoque abaixo do mínimo ─────────────────────────────
+  if (alertasEstoqueBaixo.length) {
+    blocos.push(criarBlocoAlerta({
+      cor: "laranja",
+      icone: "📦",
+      titulo: `${alertasEstoqueBaixo.length} produto${alertasEstoqueBaixo.length>1?"s":""} com estoque abaixo do mínimo`,
+      subtitulo: "Solicite reposição em breve.",
+      itens: alertasEstoqueBaixo,
+      renderItem: p => `<span class="dash-alerta-item"><strong>${escHtml(p.nome)}</strong> — estoque: ${p.estoque} · mínimo: ${p.estoqueMinimo}</span>`
+    }));
+  }
+
+  if (!blocos.length) {
+    cont.style.display = "none";
+    return;
+  }
+
+  cont.style.display = "flex";
+  cont.innerHTML = blocos.join("");
+
+  // Colapsar/expandir ao clicar no header
+  cont.querySelectorAll(".dash-alerta-header").forEach(header => {
+    header.addEventListener("click", () => {
+      const bloco = header.closest(".dash-alerta-bloco");
+      bloco.classList.toggle("dash-alerta-bloco--collapsed");
+    });
+  });
+
+  // Botão "Ver em Produtos"
+  cont.querySelectorAll("[data-ir-produtos]").forEach(btn => {
+    btn.addEventListener("click", (e) => { e.stopPropagation(); window.navegar("produtos"); });
+  });
+}
+
+function criarBlocoAlerta({ cor, icone, titulo, subtitulo, itens, renderItem }) {
+  const MAX_VISIVEIS = 5;
+  const visiveis = itens.slice(0, MAX_VISIVEIS);
+  const restantes = itens.length - MAX_VISIVEIS;
+  return `
+    <div class="dash-alerta-bloco dash-alerta-bloco--${cor}">
+      <div class="dash-alerta-header">
+        <div class="dash-alerta-header-left">
+          <span class="dash-alerta-icone">${icone}</span>
+          <div>
+            <strong class="dash-alerta-titulo">${titulo}</strong>
+            <span class="dash-alerta-subtitulo">${subtitulo}</span>
+          </div>
+        </div>
+        <div class="dash-alerta-header-right">
+          <button class="btn-ghost btn-ghost--sm" data-ir-produtos title="Ver em Produtos">Ver produtos →</button>
+          <span class="dash-alerta-chevron">▾</span>
+        </div>
+      </div>
+      <div class="dash-alerta-body">
+        <div class="dash-alerta-lista">
+          ${visiveis.map(p => `<div class="dash-alerta-row">${renderItem(p)}</div>`).join("")}
+          ${restantes > 0 ? `<div class="dash-alerta-row dash-alerta-row--mais">+ ${restantes} produto${restantes>1?"s":""} — clique em "Ver produtos" para ver todos</div>` : ""}
+        </div>
+      </div>
+    </div>`;
+}
+
+
+// ── Configurações (usuários) ───────────────────────────────────
+function iniciarConfiguracoes(usuario, dadosUsuario) {
+  document.addEventListener("navegacao", async (e) => {
+    if (e.detail.page === "configuracoes") {
+      if (dadosUsuario?.role !== "admin") {
+        window.navegar("dashboard");
+        window.mostrarToast("Acesso restrito a administradores.", "error");
+        return;
+      }
+      carregarUsuarios();
+    }
+  });
+
+  document.getElementById("btnNovoUsuario")?.addEventListener("click", abrirModalNovoUsuario);
+
+  document.getElementById("tbodyUsuarios")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-action]");
+    if (!btn) return;
+    if (btn.dataset.action === "excluir-usuario") confirmarExcluirUsuario(btn.dataset.id, btn.dataset.nome);
+  });
+}
+
+async function carregarUsuarios() {
+  const tbody = document.getElementById("tbodyUsuarios");
+  if (!tbody) return;
+  tbody.innerHTML = `<tr><td colspan="5" class="loading-cell">Carregando...</td></tr>`;
+  try {
+    const snap = await getDocs(collection(db, "mj_usuarios"));
+    if (!snap.size) { tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">Nenhum usuário cadastrado.</td></tr>`; return; }
+    const rows = [];
+    snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
+    rows.sort((a,b) => (a.nome||"").localeCompare(b.nome||""));
+    tbody.innerHTML = rows.map(u => `
+      <tr>
+        <td><strong style="color:var(--gray-800)">${u.nome || "—"}</strong></td>
+        <td style="color:var(--gray-500)">${u.email || "—"}</td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F0E4D8":"#D1FAE5"};color:${u.role==="admin"?"#5A3A24":"#065F46"}">${u.role==="admin"?"Administrador":"Funcionário"}</span></td>
+        <td style="color:var(--gray-400);font-size:var(--text-sm)">${u.criadoEm?.toDate?.()?.toLocaleDateString("pt-BR") || "—"}</td>
+        <td class="col-center">
+          <button class="btn-table-action btn-table-action--delete" data-action="excluir-usuario" data-id="${u.id}" data-nome="${u.nome||""}" title="Excluir">
+            <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+          </button>
+        </td>
+      </tr>`).join("");
+  } catch (err) {
+    tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">Erro ao carregar usuários.</td></tr>`;
+  }
+}
+
+function abrirModalNovoUsuario() {
+  window.abrirModal("Novo Usuário", `
+    <div class="form-usuario">
+      <p style="font-size:var(--text-sm);color:var(--gray-500);padding:8px;background:var(--blue-50);border-radius:var(--radius-md)">
+        ℹ️ O usuário receberá acesso com o e-mail e senha informados. Crie a conta no Firebase Authentication primeiro e depois registre aqui.
+      </p>
+      <div><label class="field-label">Nome *</label>
+        <input type="text" id="mUsuNome" class="field-input--plain" placeholder="Nome do usuário" /></div>
+      <div><label class="field-label">E-mail *</label>
+        <input type="email" id="mUsuEmail" class="field-input--plain" placeholder="email@exemplo.com" /></div>
+      <div><label class="field-label">UID do Firebase Auth *</label>
+        <input type="text" id="mUsuUID" class="field-input--plain" placeholder="Cole o UID do usuário aqui" /></div>
+      <div><label class="field-label">Cargo</label>
+        <select id="mUsuRole" class="field-input--plain">
+          <option value="funcionario">Funcionário</option>
+          <option value="admin">Administrador</option>
+        </select></div>
+    </div>`,
+    `<button class="btn-ghost" id="btnCancUsu">Cancelar</button>
+     <button class="btn-primary" id="btnSalvarUsu">Registrar Usuário</button>`);
+
+  document.getElementById("btnCancUsu").onclick = () => window.fecharModal();
+  document.getElementById("btnSalvarUsu").onclick = salvarNovoUsuario;
+  document.getElementById("mUsuNome").focus();
+}
+
+async function salvarNovoUsuario() {
+  const nome  = document.getElementById("mUsuNome").value.trim();
+  const email = document.getElementById("mUsuEmail").value.trim();
+  const uid   = document.getElementById("mUsuUID").value.trim();
+  const role  = document.getElementById("mUsuRole").value;
+
+  if (!nome || !email || !uid) { window.mostrarToast("Preencha todos os campos obrigatórios.", "error"); return; }
+  const btn = document.getElementById("btnSalvarUsu");
+  btn.disabled = true; btn.textContent = "Salvando...";
+  try {
+    await setDoc(doc(db, "mj_usuarios", uid), { nome, email, role, criadoEm: serverTimestamp() });
+    window.fecharModal();
+    window.mostrarToast("Usuário registrado!", "success");
+    carregarUsuarios();
+  } catch (err) {
+    window.mostrarToast("Erro ao registrar usuário.", "error");
+    btn.disabled = false; btn.textContent = "Registrar Usuário";
+  }
+}
+
+function confirmarExcluirUsuario(id, nome) {
+  window.abrirModal("Excluir Usuário",
+    `<div class="delete-warning"><strong>⚠️ Confirmar exclusão</strong>O usuário <strong>${nome}</strong> será removido do sistema.</div>`,
+    `<button class="btn-ghost" id="btnCancUsu">Cancelar</button>
+     <button class="btn-danger" id="btnConfExcUsu">Excluir</button>`);
+  document.getElementById("btnCancUsu").onclick = () => window.fecharModal();
+  document.getElementById("btnConfExcUsu").onclick = async () => {
+    const btn = document.getElementById("btnConfExcUsu");
+    btn.disabled = true; btn.textContent = "Excluindo...";
+    try {
+      const { deleteDoc: del, doc: d } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
+      await del(d(db, "mj_usuarios", id));
+      window.fecharModal();
+      window.mostrarToast("Usuário excluído.", "success");
+      carregarUsuarios();
+    } catch (err) {
+      window.mostrarToast("Erro ao excluir.", "error");
+      btn.disabled = false; btn.textContent = "Excluir";
+    }
+  };
+}
+</script>
+
+</body>
+</html>
