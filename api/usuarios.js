@@ -22,6 +22,23 @@ function lerCorpo(corpo) {
   return corpo;
 }
 
+function mensagemSeguraDeFalha(erro) {
+  const codigo = String(erro?.code || "");
+  if (["app/invalid-credential", "auth/invalid-credential", "auth/invalid-service-account"].includes(codigo)) {
+    return "A chave da conta de serviço do Firebase não foi aceita pela Vercel.";
+  }
+  if (["auth/insufficient-permission", "permission-denied", "firestore/permission-denied"].includes(codigo)) {
+    return "A conta de serviço não tem permissão para criar contas ou perfis no Firebase.";
+  }
+  if (codigo === "auth/operation-not-allowed") {
+    return "O login por e-mail e senha ainda não está ativado no Firebase Authentication.";
+  }
+  if (codigo === "auth/internal-error") {
+    return "O Firebase não concluiu a criação da conta. Tente novamente em alguns instantes.";
+  }
+  return "Não foi possível criar o usuário. Confira as variáveis da Vercel e tente novamente.";
+}
+
 export default async function handler(req, res) {
   if (req.method !== "POST") {
     return res.status(405).json({ erro: "Método não permitido." });
@@ -78,7 +95,7 @@ export default async function handler(req, res) {
     }
     if (!erro?.status) console.error("Erro ao criar usuário:", erro);
     return res.status(erro?.status || 500).json({
-      erro: erro?.status ? erro.message : "Não foi possível criar o usuário. Tente novamente."
+      erro: erro?.status ? erro.message : mensagemSeguraDeFalha(erro)
     });
   }
 }
