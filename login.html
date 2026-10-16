@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Entrar — Viviane Vargas Stories</title>
+  <link rel="icon" type="image/png" href="img/favicon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/main.css" />
+  <link rel="stylesheet" href="css/login.css" />
+</head>
+<body class="login-page-body">
+  <main class="login-page" aria-labelledby="loginTitulo">
+    <section class="login-card">
+      <img class="login-brand" src="img/logo-viviane-vargas-stories.png" alt="Viviane Vargas Stories" />
+      <div class="login-heading">
+        <h1 id="loginTitulo">Acesse sua gestão</h1>
+        <p>Entre para administrar a Viviane Vargas Stories.</p>
+      </div>
+
+      <form id="formLogin" class="login-form" novalidate>
+        <label class="login-field">
+          <span>E-mail</span>
+          <input type="email" id="loginEmail" class="field-input--plain" placeholder="seu@email.com" autocomplete="email" required />
+        </label>
+        <label class="login-field">
+          <span>Senha</span>
+          <input type="password" id="loginSenha" class="field-input--plain" placeholder="Sua senha" autocomplete="current-password" required />
+        </label>
+        <div id="loginErro" class="login-error" role="alert" hidden></div>
+        <button class="btn-primary login-submit" id="btnEntrar" type="submit">Entrar</button>
+      </form>
+    </section>
+  </main>
+  <script type="module" src="js/login.js"></script>
+</body>
+</html>

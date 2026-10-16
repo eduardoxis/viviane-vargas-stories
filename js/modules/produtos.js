@@ -816,7 +816,7 @@ async function abrirHistoricoEstoque(id) {
     const LABELS = {
       entrada:    { txt: "Entrada",    cor: "#065F46", bg: "#D1FAE5" },
       saida:      { txt: "Saída",      cor: "#991B1B", bg: "#FEE2E2" },
-      inventario: { txt: "Inventário", cor: "#704A2E", bg: "#F0E4D8" },
+      inventario: { txt: "Inventário", cor: "#92704D", bg: "#F7EEDF" },
       venda:      { txt: "Venda",      cor: "#92400E", bg: "#FEF3C7" },
       importacao: { txt: "Importação", cor: "#5B21B6", bg: "#EDE9FE" },
     };
@@ -1054,7 +1054,7 @@ function imprimirCodigoBarras(nome, preco, codigo) {
       body { font-family: Arial, sans-serif; display:flex; flex-direction:column; align-items:center; justify-content:center; padding:24px; margin:0; }
       .nome { font-size: 15px; font-weight: 700; text-align:center; max-width: 320px; line-height: 1.2; margin-bottom: 4px;
               display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; word-break:break-word; }
-      .preco { font-size: 16px; font-weight: 700; color:#704A2E; margin-top: 2px; }
+      .preco { font-size: 16px; font-weight: 700; color:#92704D; margin-top: 2px; }
       @media print { body { padding: 0; } }
     </style></head>
     <body>
@@ -1078,7 +1078,7 @@ function imprimirCodigoBarras(nome, preco, codigo) {
 const LABELS_HIST = {
   entrada:    { txt: "Entrada",    cor: "#065F46", bg: "#D1FAE5" },
   saida:      { txt: "Saída",      cor: "#991B1B", bg: "#FEE2E2" },
-  inventario: { txt: "Inventário", cor: "#704A2E", bg: "#F0E4D8" },
+  inventario: { txt: "Inventário", cor: "#92704D", bg: "#F7EEDF" },
   venda:      { txt: "Venda",      cor: "#92400E", bg: "#FEF3C7" },
   importacao: { txt: "Importação", cor: "#5B21B6", bg: "#EDE9FE" },
 };

@@ -753,7 +753,7 @@ async function excluirCompra(id) {
 }
 
 // ── Dashboard ────────────────────────────────────────────────
-const CORES = { azul:"#8B5E3C", verde:"#10B981", amarelo:"#F2C80F", vermelho:"#E54957", roxo:"#7C3AED", laranja:"#FD625E", cinza:"#94A3B8" };
+const CORES = { azul:"#B79061", verde:"#10B981", amarelo:"#F2C80F", vermelho:"#E54957", roxo:"#7C3AED", laranja:"#FD625E", cinza:"#94A3B8" };
 const _charts = {};
 
 function _destroyChart(k) { if (_charts[k]) { _charts[k].destroy(); delete _charts[k]; } }
@@ -922,7 +922,7 @@ async function imprimirCliente(clienteId) {
       <style>body{font-family:Arial,sans-serif;font-size:13px;margin:20px;color:#111}
       h1{font-size:18px;margin-bottom:4px}.sub{color:#555;font-size:12px;margin-bottom:20px}
       table{width:100%;border-collapse:collapse;margin-bottom:20px}
-      th{background:#4A2F1D;color:#fff;padding:7px 10px;text-align:left;font-size:12px}
+      th{background:#715338;color:#fff;padding:7px 10px;text-align:left;font-size:12px}
       td{padding:6px 10px;border-bottom:1px solid #eee;font-size:12px}
       .resumo{display:flex;gap:20px;margin-bottom:20px;flex-wrap:wrap}
       .box{background:#f1f5f9;border-radius:8px;padding:12px 16px;min-width:130px}
@@ -966,7 +966,7 @@ async function imprimirRelatorio() {
       <title>Relatório de Promissórias</title>
       <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#111}h1{font-size:18px}
       table{width:100%;border-collapse:collapse;margin-top:16px}
-      th{background:#4A2F1D;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
+      th{background:#715338;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
       td{padding:6px 10px;border-bottom:1px solid #eee;font-size:11px}
       tfoot td{font-weight:bold;background:#f1f5f9}</style></head><body>
       <h1>Gerência Viviane Vargas Stories — Relatório de Promissórias</h1>

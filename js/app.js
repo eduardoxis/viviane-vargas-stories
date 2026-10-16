@@ -1,6 +1,6 @@
 
 import { auth, db }    from "./services/firebase-config.js";
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { formatarMoeda, escHtml } from "./utils/database.js";
 import { iniciarProdutos }    from "./modules/produtos.js";
@@ -116,40 +116,6 @@ document.getElementById("btnAbrirSidebar").addEventListener("click", () => {
 document.getElementById("btnFecharSidebar").addEventListener("click", fecharSidebar);
 document.getElementById("sidebarOverlay").addEventListener("click", fecharSidebar);
 
-// ── Login ──────────────────────────────────────────────────────
-document.getElementById("btnEntrar").addEventListener("click", fazerLogin);
-document.getElementById("loginSenha").addEventListener("keydown", (e) => { if (e.key === "Enter") fazerLogin(); });
-
-async function fazerLogin() {
-  const email = document.getElementById("loginEmail").value.trim();
-  const senha  = document.getElementById("loginSenha").value;
-  const erro   = document.getElementById("loginErro");
-  const btn    = document.getElementById("btnEntrar");
-
-  if (!email || !senha) { mostrarErroLogin("Preencha e-mail e senha."); return; }
-  btn.disabled = true; btn.textContent = "Entrando...";
-  erro.hidden = true;
-
-  try {
-    await signInWithEmailAndPassword(auth, email, senha);
-  } catch (err) {
-    btn.disabled = false; btn.textContent = "Entrar";
-    const msgs = {
-      "auth/user-not-found":  "Usuário não encontrado.",
-      "auth/wrong-password":  "Senha incorreta.",
-      "auth/invalid-email":   "E-mail inválido.",
-      "auth/too-many-requests": "Muitas tentativas. Tente mais tarde.",
-      "auth/invalid-credential": "E-mail ou senha incorretos."
-    };
-    mostrarErroLogin(msgs[err.code] || "Erro ao fazer login.");
-  }
-}
-
-function mostrarErroLogin(msg) {
-  const el = document.getElementById("loginErro");
-  el.textContent = msg; el.hidden = false;
-}
-
 // ── Logout ─────────────────────────────────────────────────────
 document.getElementById("btnLogout").addEventListener("click", async () => {
   await signOut(auth);
@@ -161,7 +127,6 @@ let _usuario = null, _dadosUsuario = null, _modulosIniciados = false;
 onAuthStateChanged(auth, async (user) => {
   if (user) {
     _usuario = user;
-    document.getElementById("page-login").style.display = "none";
     document.getElementById("appShell").hidden = false;
 
     try {
@@ -214,10 +179,7 @@ onAuthStateChanged(auth, async (user) => {
 
   } else {
     _usuario = null; _dadosUsuario = null; _modulosIniciados = false;
-    document.getElementById("page-login").style.display = "flex";
-    document.getElementById("appShell").hidden = true;
-    document.getElementById("btnEntrar").disabled = false;
-    document.getElementById("btnEntrar").textContent = "Entrar";
+    window.location.replace("./login.html");
   }
 });
 
@@ -401,7 +363,7 @@ async function carregarUsuarios() {
       <tr>
         <td><strong style="color:var(--gray-800)">${u.nome || "—"}</strong></td>
         <td style="color:var(--gray-500)">${u.email || "—"}</td>
-        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F0E4D8":"#D1FAE5"};color:${u.role==="admin"?"#5A3A24":"#065F46"}">${u.role==="admin"?"Administrador":"Funcionário"}</span></td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F7EEDF":"#D1FAE5"};color:${u.role==="admin"?"#715338":"#065F46"}">${u.role==="admin"?"Administrador":"Funcionário"}</span></td>
         <td style="color:var(--gray-400);font-size:var(--text-sm)">${u.criadoEm?.toDate?.()?.toLocaleDateString("pt-BR") || "—"}</td>
         <td class="col-center">
           <button class="btn-table-action btn-table-action--delete" data-action="excluir-usuario" data-id="${u.id}" data-nome="${u.nome||""}" title="Excluir">

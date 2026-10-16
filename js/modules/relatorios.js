@@ -439,7 +439,7 @@ async function imprimirCaixa() {
     <title>Caixa — Gerência Viviane Vargas Stories</title>
     <style>body{font-family:Arial,sans-serif;font-size:12px;margin:20px;color:#111}h1{font-size:18px}
     table{width:100%;border-collapse:collapse;margin-top:16px}
-    th{background:#4A2F1D;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
+    th{background:#715338;color:#fff;padding:7px 10px;text-align:left;font-size:11px}
     td{padding:6px 10px;border-bottom:1px solid #eee;font-size:11px}</style></head><body>
     <h1>Gerência Viviane Vargas Stories — Fluxo de Caixa</h1>
     <p style="color:#555;font-size:11px">Período: ${ini||"—"} a ${fim||"—"} · Emitido em ${new Date().toLocaleDateString("pt-BR")}</p>
@@ -549,7 +549,7 @@ async function relVendas(iniDate, fimDate) {
         type: "doughnut",
         data: {
           labels: Object.keys(porForma),
-          datasets: [{ data: Object.values(porForma), backgroundColor: ["#8B5E3C","#10B981","#F59E0B","#8B5CF6","#EF4444","#94A3B8"], borderWidth: 0 }]
+          datasets: [{ data: Object.values(porForma), backgroundColor: ["#B79061","#10B981","#F59E0B","#8B5CF6","#EF4444","#94A3B8"], borderWidth: 0 }]
         },
         options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: "bottom" } }, cutout: "60%" }
       });
@@ -567,7 +567,7 @@ async function relVendas(iniDate, fimDate) {
         type: "bar",
         data: {
           labels: dias,
-          datasets: [{ label: "Vendas (R$)", data: dias.map(d => porDia[d] || 0), backgroundColor: "#8B5E3C", borderRadius: 4 }]
+          datasets: [{ label: "Vendas (R$)", data: dias.map(d => porDia[d] || 0), backgroundColor: "#B79061", borderRadius: 4 }]
         },
         options: {
           responsive: true, maintainAspectRatio: false,

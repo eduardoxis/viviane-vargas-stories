@@ -189,7 +189,7 @@ function renderizar() {
         <span><strong>${dinheiro(valor)}</strong> <small style="color:var(--gray-400)">${pct.toFixed(0)}%</small></span>
       </div>
       <div style="height:6px;background:var(--gray-100);border-radius:9999px;margin-top:5px">
-        <div style="height:100%;width:${pct.toFixed(1)}%;background:#8B5E3C;border-radius:9999px"></div>
+        <div style="height:100%;width:${pct.toFixed(1)}%;background:#B79061;border-radius:9999px"></div>
       </div>
     </div>`;
   }).join("") || `<p class="empty-cell">Sem dados.</p>`;
