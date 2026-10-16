@@ -13,7 +13,10 @@ export async function exigirAdmin(req) {
   // Falhas das variáveis da Vercel não são erro de sessão e devem ficar visíveis.
   obterDbAdmin();
   try {
-    usuario = await getAuth().verifyIdToken(token, true);
+    // O perfil ativo é conferido abaixo no Firestore. Não verificamos revogação
+    // aqui porque ela exige uma chamada extra ao Auth Admin e pode falhar mesmo
+    // para um token válido quando a conta de serviço não tem essa permissão.
+    usuario = await getAuth().verifyIdToken(token);
   } catch (causa) {
     console.error("Erro ao validar token do administrador:", causa);
     const erro = new Error("Sessão inválida ou expirada. Saia e entre novamente.");
