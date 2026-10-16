@@ -10,12 +10,13 @@ export async function exigirAdmin(req) {
     throw erro;
   }
   let usuario;
+  // Falhas das variáveis da Vercel não são erro de sessão e devem ficar visíveis.
+  obterDbAdmin();
   try {
-    // Inicializa o Firebase Admin antes de validar o token.
-    obterDbAdmin();
     usuario = await getAuth().verifyIdToken(token, true);
-  } catch {
-    const erro = new Error("Sessão inválida ou expirada.");
+  } catch (causa) {
+    console.error("Erro ao validar token do administrador:", causa);
+    const erro = new Error("Sessão inválida ou expirada. Saia e entre novamente.");
     erro.status = 401;
     throw erro;
   }

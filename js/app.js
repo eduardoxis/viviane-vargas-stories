@@ -411,7 +411,12 @@ function abrirModalNovoUsuario() {
       <div><label class="field-label">E-mail *</label>
         <input type="email" id="mUsuEmail" class="field-input--plain" placeholder="email@exemplo.com" maxlength="254" autocomplete="email" /></div>
       <div><label class="field-label">Senha inicial *</label>
-        <input type="password" id="mUsuSenha" class="field-input--plain" placeholder="Mínimo de 6 caracteres" minlength="6" maxlength="128" autocomplete="new-password" /></div>
+        <div class="user-password-control">
+          <input type="password" id="mUsuSenha" class="field-input--plain" placeholder="Mínimo de 6 caracteres" minlength="6" maxlength="128" autocomplete="new-password" />
+          <button type="button" class="user-password-toggle" id="btnMostrarSenhaNovoUsuario" aria-label="Mostrar senha" title="Mostrar senha">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+          </button>
+        </div></div>
       <div><label class="field-label">Cargo</label>
         <select id="mUsuRole" class="field-input--plain">
           <option value="funcionario">Funcionário</option>
@@ -423,6 +428,16 @@ function abrirModalNovoUsuario() {
 
   document.getElementById("btnCancUsu").onclick = () => window.fecharModal();
   document.getElementById("btnSalvarUsu").onclick = salvarNovoUsuario;
+  document.getElementById("btnMostrarSenhaNovoUsuario").onclick = () => {
+    const campo = document.getElementById("mUsuSenha");
+    const senhaVisivel = campo.type === "text";
+    campo.type = senhaVisivel ? "password" : "text";
+    const texto = senhaVisivel ? "Mostrar senha" : "Ocultar senha";
+    const botao = document.getElementById("btnMostrarSenhaNovoUsuario");
+    botao.setAttribute("aria-label", texto);
+    botao.title = texto;
+    campo.focus();
+  };
   document.getElementById("mUsuNome").focus();
 }
 

@@ -16,6 +16,11 @@ function appAdmin() {
     erro.status = 500;
     throw erro;
   }
+  if (projectId !== "viviane-vargas-stories") {
+    const erro = new Error("A Vercel está usando credenciais de outro projeto Firebase. Configure as credenciais de viviane-vargas-stories.");
+    erro.status = 500;
+    throw erro;
+  }
   return initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
 }
 

@@ -4,7 +4,8 @@ import { auth } from "./firebase-config.js";
 export async function requisitarApiAdmin(caminho, opcoes = {}) {
   const usuario = auth.currentUser;
   if (!usuario) throw new Error("Entre na sua conta para realizar esta ação.");
-  const token = await usuario.getIdToken();
+  // Renovar o token evita que uma sessão antiga gere 401 após um novo deploy.
+  const token = await usuario.getIdToken(true);
   const resposta = await fetch(caminho, {
     ...opcoes,
     headers: {

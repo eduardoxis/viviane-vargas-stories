@@ -371,6 +371,17 @@ a { color: inherit; text-decoration: none; }
 }
 .field-input--plain:focus { border-color: var(--blue-600); box-shadow: 0 0 0 3px rgba(139,94,60,.15); background: #fff; }
 
+.user-password-control { position: relative; }
+.user-password-control .field-input--plain { padding-right: 48px; }
+.user-password-toggle {
+  position: absolute; right: 5px; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border: 0; border-radius: var(--radius-sm); background: transparent;
+  color: var(--gray-500); cursor: pointer;
+}
+.user-password-toggle:hover, .user-password-toggle:focus-visible { background: var(--blue-50); color: var(--blue-700); outline: none; }
+.user-password-toggle svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
 /* ── Filtros ─────────────────────────────────────────────── */
 .filter-bar {
   display: flex; gap: var(--space-3); flex-wrap: wrap; align-items: flex-end;
