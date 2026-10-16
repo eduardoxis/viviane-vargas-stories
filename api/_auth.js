@@ -19,7 +19,7 @@ export async function exigirAdmin(req) {
     erro.status = 401;
     throw erro;
   }
-  const perfil = await obterDbAdmin().collection("mj_usuarios").doc(usuario.uid).get();
+  const perfil = await obterDbAdmin().collection("vv_usuarios").doc(usuario.uid).get();
   if (perfil.data()?.role !== "admin") {
     const erro = new Error("Acesso restrito a administradores.");
     erro.status = 403;

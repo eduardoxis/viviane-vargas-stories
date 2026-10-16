@@ -12,6 +12,12 @@ function mostrarErro(mensagem) {
   erro.hidden = false;
 }
 
+const mensagemPendente = sessionStorage.getItem("vv_login_erro");
+if (mensagemPendente) {
+  sessionStorage.removeItem("vv_login_erro");
+  mostrarErro(mensagemPendente);
+}
+
 onAuthStateChanged(auth, (usuario) => {
   if (usuario) window.location.replace("./index.html");
 });

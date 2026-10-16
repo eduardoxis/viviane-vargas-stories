@@ -51,7 +51,7 @@ document.getElementById("modalBackdrop").addEventListener("click", (e) => {
 // ── Toggle valores ─────────────────────────────────────────────
 (function() {
   const btn = document.getElementById("btnToggleValores");
-  const KEY = "mj_valores_ocultos";
+  const KEY = "vv_valores_ocultos";
   const SVG_ON  = `<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path d="M10 12a2 2 0 100-4 2 2 0 000 4z"/><path fill-rule="evenodd" d="M.458 10C1.732 5.943 5.522 3 10 3s8.268 2.943 9.542 7c-1.274 4.057-5.064 7-9.542 7S1.732 14.057.458 10zM14 10a4 4 0 11-8 0 4 4 0 018 0z" clip-rule="evenodd"/></svg>`;
   const SVG_OFF = `<svg viewBox="0 0 20 20" fill="currentColor" width="16" height="16"><path fill-rule="evenodd" d="M3.707 2.293a1 1 0 00-1.414 1.414l14 14a1 1 0 001.414-1.414l-1.473-1.473A10.014 10.014 0 0019.542 10C18.268 5.943 14.478 3 10 3a9.958 9.958 0 00-4.512 1.074l-1.78-1.781zm4.261 4.26l1.514 1.515a2.003 2.003 0 012.45 2.45l1.514 1.514a4 4 0 00-5.478-5.478z" clip-rule="evenodd"/><path d="M12.454 16.697L9.75 13.992a4 4 0 01-3.742-3.741L2.335 6.578A9.98 9.98 0 00.458 10c1.274 4.057 5.065 7 9.542 7 .847 0 1.669-.105 2.454-.303z"/></svg>`;
   const set = (oculto) => {
@@ -130,17 +130,31 @@ onAuthStateChanged(auth, async (user) => {
     document.getElementById("appShell").hidden = false;
 
     try {
-      const snap = await getDoc(doc(db, "mj_usuarios", user.uid));
+      const snap = await getDoc(doc(db, "vv_usuarios", user.uid));
       if (snap.exists()) {
         _dadosUsuario = snap.data();
       } else {
-        // Primeiro acesso: criar doc de admin
-        _dadosUsuario = { nome: user.displayName || user.email.split("@")[0], email: user.email, role: "admin", criadoEm: serverTimestamp() };
-        await setDoc(doc(db, "mj_usuarios", user.uid), _dadosUsuario);
+        sessionStorage.setItem("vv_login_erro", "Seu acesso ainda não foi liberado por um administrador.");
+        await signOut(auth);
+        return;
       }
     } catch (err) {
       console.error("Erro ao buscar dados do usuário:", err);
-      _dadosUsuario = { nome: user.email, email: user.email, role: "funcionario" };
+      sessionStorage.setItem("vv_login_erro", "Não foi possível validar o seu acesso. Tente novamente.");
+      await signOut(auth);
+      return;
+    }
+
+    if (_dadosUsuario.ativo === false) {
+      sessionStorage.setItem("vv_login_erro", "Esta conta está inativa. Fale com um administrador.");
+      await signOut(auth);
+      return;
+    }
+
+    try {
+      await setDoc(doc(db, "vv_usuarios", user.uid), { ultimoLoginEm: serverTimestamp() }, { merge: true });
+    } catch (err) {
+      console.error("Erro ao registrar último acesso:", err);
     }
 
     // Atualizar UI
@@ -187,8 +201,8 @@ onAuthStateChanged(auth, async (user) => {
 async function carregarDashboard(role) {
   try {
     const [prodSnap, cliSnap, compSnap, pagSnap] = await Promise.all([
-      getDocs(collection(db, "mj_produtos")),
-      role === "admin" ? getDocs(collection(db, "mj_clientes")) : Promise.resolve({ size: 0 }),
+      getDocs(collection(db, "vv_produtos")),
+      role === "admin" ? getDocs(collection(db, "vv_clientes")) : Promise.resolve({ size: 0 }),
       role === "admin" ? getDocs(collection(db, "prom_compras")) : Promise.resolve({ forEach: ()=>{} }),
       role === "admin" ? getDocs(collection(db, "prom_pagamentos")) : Promise.resolve({ forEach: ()=>{} })
     ]);
@@ -346,33 +360,42 @@ function iniciarConfiguracoes(usuario, dadosUsuario) {
     const btn = e.target.closest("[data-action]");
     if (!btn) return;
     if (btn.dataset.action === "excluir-usuario") confirmarExcluirUsuario(btn.dataset.id, btn.dataset.nome);
+    if (btn.dataset.action === "alternar-usuario") alternarStatusUsuario(btn.dataset.id, btn.dataset.ativo === "true");
   });
 }
 
 async function carregarUsuarios() {
   const tbody = document.getElementById("tbodyUsuarios");
   if (!tbody) return;
-  tbody.innerHTML = `<tr><td colspan="5" class="loading-cell">Carregando...</td></tr>`;
+  tbody.innerHTML = `<tr><td colspan="7" class="loading-cell">Carregando...</td></tr>`;
   try {
-    const snap = await getDocs(collection(db, "mj_usuarios"));
-    if (!snap.size) { tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">Nenhum usuário cadastrado.</td></tr>`; return; }
+    const snap = await getDocs(collection(db, "vv_usuarios"));
+    if (!snap.size) { tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Nenhum usuário cadastrado.</td></tr>`; return; }
     const rows = [];
     snap.forEach(d => rows.push({ id: d.id, ...d.data() }));
     rows.sort((a,b) => (a.nome||"").localeCompare(b.nome||""));
-    tbody.innerHTML = rows.map(u => `
+    tbody.innerHTML = rows.map(u => {
+      const ativo = u.ativo !== false;
+      const criadoEm = u.criadoEm?.toDate?.()?.toLocaleDateString("pt-BR") || "—";
+      const ultimoLogin = u.ultimoLoginEm?.toDate?.()?.toLocaleString("pt-BR") || "Nunca acessou";
+      return `
       <tr>
         <td><strong style="color:var(--gray-800)">${u.nome || "—"}</strong></td>
         <td style="color:var(--gray-500)">${u.email || "—"}</td>
         <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F7EEDF":"#D1FAE5"};color:${u.role==="admin"?"#715338":"#065F46"}">${u.role==="admin"?"Administrador":"Funcionário"}</span></td>
-        <td style="color:var(--gray-400);font-size:var(--text-sm)">${u.criadoEm?.toDate?.()?.toLocaleDateString("pt-BR") || "—"}</td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${ativo?"#D1FAE5":"#FEE2E2"};color:${ativo?"#065F46":"#991B1B"}">${ativo?"Ativo":"Inativo"}</span></td>
+        <td style="color:var(--gray-400);font-size:var(--text-sm)">${criadoEm}</td>
+        <td style="color:var(--gray-400);font-size:var(--text-sm)">${ultimoLogin}</td>
         <td class="col-center">
+          <button class="btn-table-action" data-action="alternar-usuario" data-id="${u.id}" data-ativo="${ativo}" title="${ativo ? "Desativar" : "Ativar"} usuário">${ativo ? "⏸" : "▶"}</button>
           <button class="btn-table-action btn-table-action--delete" data-action="excluir-usuario" data-id="${u.id}" data-nome="${u.nome||""}" title="Excluir">
             <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
           </button>
         </td>
-      </tr>`).join("");
+      </tr>`;
+    }).join("");
   } catch (err) {
-    tbody.innerHTML = `<tr><td colspan="5" class="empty-cell">Erro ao carregar usuários.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="7" class="empty-cell">Erro ao carregar usuários.</td></tr>`;
   }
 }
 
@@ -412,13 +435,37 @@ async function salvarNovoUsuario() {
   const btn = document.getElementById("btnSalvarUsu");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    await setDoc(doc(db, "mj_usuarios", uid), { nome, email, role, criadoEm: serverTimestamp() });
+    await setDoc(doc(db, "vv_usuarios", uid), {
+      nome, email, role,
+      ativo: true,
+      criadoEm: serverTimestamp(),
+      atualizadoEm: serverTimestamp(),
+      ultimoLoginEm: null
+    });
     window.fecharModal();
     window.mostrarToast("Usuário registrado!", "success");
     carregarUsuarios();
   } catch (err) {
     window.mostrarToast("Erro ao registrar usuário.", "error");
     btn.disabled = false; btn.textContent = "Registrar Usuário";
+  }
+}
+
+async function alternarStatusUsuario(id, ativoAtual) {
+  if (id === _usuario?.uid && ativoAtual) {
+    window.mostrarToast("Você não pode desativar a própria conta.", "error");
+    return;
+  }
+  try {
+    await setDoc(doc(db, "vv_usuarios", id), {
+      ativo: !ativoAtual,
+      atualizadoEm: serverTimestamp()
+    }, { merge: true });
+    window.mostrarToast(ativoAtual ? "Usuário desativado." : "Usuário ativado.", "success");
+    carregarUsuarios();
+  } catch (err) {
+    console.error("Erro ao alterar status do usuário:", err);
+    window.mostrarToast("Erro ao alterar o status do usuário.", "error");
   }
 }
 
@@ -433,7 +480,7 @@ function confirmarExcluirUsuario(id, nome) {
     btn.disabled = true; btn.textContent = "Excluindo...";
     try {
       const { deleteDoc: del, doc: d } = await import("https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js");
-      await del(d(db, "mj_usuarios", id));
+      await del(d(db, "vv_usuarios", id));
       window.fecharModal();
       window.mostrarToast("Usuário excluído.", "success");
       carregarUsuarios();

@@ -8,24 +8,29 @@ service cloud.firestore {
 
     function ehAdmin() {
       return autenticado() &&
-        get(/databases/$(database)/documents/mj_usuarios/$(request.auth.uid)).data.role == "admin";
+        get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "admin";
     }
 
     // ── Usuários do sistema ──────────────────────────────────
-    match /mj_usuarios/{uid} {
+    match /vv_usuarios/{uid} {
       allow read:   if autenticado() && (request.auth.uid == uid || ehAdmin());
-      allow write:  if ehAdmin();
-      allow create: if autenticado() && request.auth.uid == uid;
+      // O primeiro administrador é criado manualmente pelo Firebase Console.
+      // Nenhum usuário pode criar o próprio perfil ou se tornar administrador.
+      allow create, delete: if ehAdmin();
+      allow update: if ehAdmin() || (
+        autenticado() && request.auth.uid == uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["ultimoLoginEm"])
+      );
     }
 
     // ── Produtos / Estoque ───────────────────────────────────
-    match /mj_produtos/{id} {
+    match /vv_produtos/{id} {
       allow read:   if autenticado();
       allow write:  if autenticado();
     }
 
     // ── Clientes ─────────────────────────────────────────────
-    match /mj_clientes/{id} {
+    match /vv_clientes/{id} {
       allow read, write: if ehAdmin();
     }
 
@@ -41,50 +46,50 @@ service cloud.firestore {
     }
 
     // ── Vendas ───────────────────────────────────────────────
-    match /mj_vendas/{id} {
+    match /vv_vendas/{id} {
       allow read:   if autenticado();
       allow create: if autenticado();
       allow update: if autenticado();
       allow delete: if ehAdmin();
     }
 
-    match /mj_venda_itens/{id} {
+    match /vv_venda_itens/{id} {
       allow read:   if autenticado();
       allow create: if autenticado();
       allow delete: if ehAdmin();
     }
 
     // ── Compras (Fornecedores) ────────────────────────────────
-    match /mj_compras_fornec/{id} {
+    match /vv_compras_fornec/{id} {
       allow read, write: if ehAdmin();
     }
 
     // ── Despesas ─────────────────────────────────────────────
-    match /mj_despesas/{id} {
+    match /vv_despesas/{id} {
       allow read, write: if ehAdmin();
     }
 
     // ── Histórico de Estoque ─────────────────────────────────
-    match /mj_estoque_historico/{id} {
+    match /vv_estoque_historico/{id} {
       allow read:   if autenticado();
       allow create: if autenticado();
       allow update, delete: if ehAdmin();
     }
 
     // ── Histórico de Custo / Margem ──────────────────────────
-    match /mj_custo_historico/{id} {
+    match /vv_custo_historico/{id} {
       allow read:   if autenticado();
       allow create: if autenticado();
       allow update, delete: if ehAdmin();
     }
 
     // ── Caixa ────────────────────────────────────────────────
-    match /mj_caixa/{id} {
+    match /vv_caixa/{id} {
       allow read, write: if ehAdmin();
     }
 
     // ── Sessões de Caixa (abertura/fechamento/sangria) ───────
-    match /mj_caixa_sessoes/{id} {
+    match /vv_caixa_sessoes/{id} {
       allow read:   if autenticado();
       allow create: if autenticado();
       allow update: if autenticado();

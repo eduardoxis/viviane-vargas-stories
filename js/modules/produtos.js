@@ -7,9 +7,9 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, formatarData, escHtml, exportarExcel } from "../utils/database.js";
 
-const COL = "mj_produtos";
-const COL_HIST = "mj_estoque_historico";
-const COL_CUSTO_HIST = "mj_custo_historico";
+const COL = "vv_produtos";
+const COL_HIST = "vv_estoque_historico";
+const COL_CUSTO_HIST = "vv_custo_historico";
 
 // Grava uma linha no histórico de movimentações de estoque
 async function gravarMovimentacao({ produtoId, nomeProduto, tipo, qtdAntes, qtdDepois, motivo, operador }) {

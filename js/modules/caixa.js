@@ -6,13 +6,13 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml } from "../utils/database.js";
 
-const COL_VENDAS   = "mj_vendas";
-const COL_PRODUTOS = "mj_produtos";
-const COL_ITENS    = "mj_venda_itens";
+const COL_VENDAS   = "vv_vendas";
+const COL_PRODUTOS = "vv_produtos";
+const COL_ITENS    = "vv_venda_itens";
 const COL_CLI_PROM = "prom_clientes";
 const COL_COMP_PROM = "prom_compras";
-const COL_SESSOES  = "mj_caixa_sessoes";
-const COL_HIST     = "mj_estoque_historico";
+const COL_SESSOES  = "vv_caixa_sessoes";
+const COL_HIST     = "vv_estoque_historico";
 
 let _dadosUsuario = null;
 let _sessaoCaixa = null; // { id, status, valorInicial, operadorAbertura, abertura, sangrias: [] }

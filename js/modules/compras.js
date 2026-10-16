@@ -7,8 +7,8 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
-const COL_COMPRAS  = "mj_compras_fornec";
-const COL_PRODUTOS = "mj_produtos";
+const COL_COMPRAS  = "vv_compras_fornec";
+const COL_PRODUTOS = "vv_produtos";
 
 let _dadosUsuario = null;
 let _anexosAtuais = []; // [{ tipo: 'imagem'|'pdf', nome, dados (base64) }]

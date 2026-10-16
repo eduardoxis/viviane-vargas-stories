@@ -8,8 +8,8 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
-const COL_VENDAS = "mj_vendas";
-const COL_ITENS  = "mj_venda_itens";
+const COL_VENDAS = "vv_vendas";
+const COL_ITENS  = "vv_venda_itens";
 
 let _vendas    = [];     // vendas do dia carregadas (já com itens e totais calculados)
 let _abaAtual  = "pdv";

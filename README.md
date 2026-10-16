@@ -43,7 +43,7 @@ As credenciais ficam em: Firebase Console → Seu Projeto → ⚙️ Configuraç
 1. No Firebase Console → Authentication → Usuários → Adicionar usuário
 2. Informe e-mail e senha do dono/admin
 3. Copie o UID gerado
-4. No Firestore → Dados → Crie a coleção `mj_usuarios`
+4. No Firestore → Dados → Crie a coleção `vv_usuarios`
 5. Crie um documento com o **UID** como ID, com os campos:
    ```
    nome:     "Seu Nome"
@@ -91,11 +91,11 @@ gerencia-viviane-vargas-stories/
 
 | Coleção | Descrição |
 |---------|-----------|
-| `mj_usuarios` | Usuários do sistema (admin/funcionário) |
-| `mj_produtos` | Cadastro de produtos e estoque |
-| `mj_custo_historico` | Histórico de alterações de preço de custo (margem) |
-| `mj_clientes` | Clientes da loja |
-| `mj_despesas` | Despesas da loja (descrição, categoria, tipo, valor, data, situação) |
+| `vv_usuarios` | Usuários do sistema (admin/funcionário) |
+| `vv_produtos` | Cadastro de produtos e estoque |
+| `vv_custo_historico` | Histórico de alterações de preço de custo (margem) |
+| `vv_clientes` | Clientes da loja |
+| `vv_despesas` | Despesas da loja (descrição, categoria, tipo, valor, data, situação) |
 | `prom_clientes` | Clientes com promissória |
 | `prom_compras` | Histórico de compras fiadas |
 | `prom_pagamentos` | Pagamentos das promissórias |

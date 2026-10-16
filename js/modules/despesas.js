@@ -7,7 +7,7 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml } from "../utils/database.js";
 
-const COL = "mj_despesas";
+const COL = "vv_despesas";
 
 const CATEGORIAS = [
   "Aluguel", "Água", "Energia", "Internet / Telefone", "Salários",

@@ -5,13 +5,13 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
-const COL_VENDAS    = "mj_vendas";
-const COL_COMPRAS   = "mj_compras_fornec";
-const COL_PRODUTOS  = "mj_produtos";
+const COL_VENDAS    = "vv_vendas";
+const COL_COMPRAS   = "vv_compras_fornec";
+const COL_PRODUTOS  = "vv_produtos";
 const COL_PROM_CLI  = "prom_clientes";
 const COL_PROM_COMP = "prom_compras";
 const COL_PROM_PAG  = "prom_pagamentos";
-const COL_CAIXA     = "mj_caixa";
+const COL_CAIXA     = "vv_caixa";
 
 let _caixaRelIniciado = false;
 

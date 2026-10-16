@@ -11,9 +11,9 @@ export default async function handler(req, res) {
     aplicarLimite(`resumo:${uid}`, { maximo: 20, janelaMs: 10 * 60_000 });
     const db = obterDbAdmin();
     const [produtos, clientes, vendas] = await Promise.all([
-      db.collection("mj_produtos").count().get(),
-      db.collection("mj_clientes").count().get(),
-      db.collection("mj_vendas").orderBy("criadoEm", "desc").limit(100).get()
+      db.collection("vv_produtos").count().get(),
+      db.collection("vv_clientes").count().get(),
+      db.collection("vv_vendas").orderBy("criadoEm", "desc").limit(100).get()
     ]);
     const faturamentoRecente = vendas.docs.reduce((total, item) => total + Number(item.data().total || item.data().valorTotal || 0), 0);
     return res.status(200).json({

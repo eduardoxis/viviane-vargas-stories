@@ -6,7 +6,7 @@ import {
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, formatarData, escHtml } from "../utils/database.js";
 
-const COL = "mj_clientes";
+const COL = "vv_clientes";
 
 // ── Celular: máscara (00) 00000-0000 e validação ─────────────
 function apenasDigitos(v) { return String(v || "").replace(/\D/g, ""); }
