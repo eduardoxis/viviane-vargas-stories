@@ -11,6 +11,7 @@ import { iniciarDespesas }    from "./modules/despesas.js";
 import { iniciarCaixa }       from "./modules/caixa.js";
 import { iniciarVendas }      from "./modules/vendas.js";
 import { iniciarRelatorios }  from "./modules/relatorios.js";
+import { requisitarApiAdmin } from "./services/api.js";
 
 // ── Globais necessários ────────────────────────────────────────
 window.abrirModal = function(titulo, bodyHTML, footerHTML = "") {
@@ -403,14 +404,14 @@ function abrirModalNovoUsuario() {
   window.abrirModal("Novo Usuário", `
     <div class="form-usuario">
       <p style="font-size:var(--text-sm);color:var(--gray-500);padding:8px;background:var(--blue-50);border-radius:var(--radius-md)">
-        ℹ️ O usuário receberá acesso com o e-mail e senha informados. Crie a conta no Firebase Authentication primeiro e depois registre aqui.
+        ℹ️ A conta e o perfil de acesso serão criados automaticamente. O UID do Firebase não precisa ser informado.
       </p>
       <div><label class="field-label">Nome *</label>
-        <input type="text" id="mUsuNome" class="field-input--plain" placeholder="Nome do usuário" /></div>
+        <input type="text" id="mUsuNome" class="field-input--plain" placeholder="Nome do usuário" maxlength="100" autocomplete="name" /></div>
       <div><label class="field-label">E-mail *</label>
-        <input type="email" id="mUsuEmail" class="field-input--plain" placeholder="email@exemplo.com" /></div>
-      <div><label class="field-label">UID do Firebase Auth *</label>
-        <input type="text" id="mUsuUID" class="field-input--plain" placeholder="Cole o UID do usuário aqui" /></div>
+        <input type="email" id="mUsuEmail" class="field-input--plain" placeholder="email@exemplo.com" maxlength="254" autocomplete="email" /></div>
+      <div><label class="field-label">Senha inicial *</label>
+        <input type="password" id="mUsuSenha" class="field-input--plain" placeholder="Mínimo de 6 caracteres" minlength="6" maxlength="128" autocomplete="new-password" /></div>
       <div><label class="field-label">Cargo</label>
         <select id="mUsuRole" class="field-input--plain">
           <option value="funcionario">Funcionário</option>
@@ -428,25 +429,24 @@ function abrirModalNovoUsuario() {
 async function salvarNovoUsuario() {
   const nome  = document.getElementById("mUsuNome").value.trim();
   const email = document.getElementById("mUsuEmail").value.trim();
-  const uid   = document.getElementById("mUsuUID").value.trim();
+  const senha = document.getElementById("mUsuSenha").value;
   const role  = document.getElementById("mUsuRole").value;
 
-  if (!nome || !email || !uid) { window.mostrarToast("Preencha todos os campos obrigatórios.", "error"); return; }
+  if (!nome || !email || !senha) { window.mostrarToast("Preencha todos os campos obrigatórios.", "error"); return; }
+  if (!/^\S+@\S+\.\S+$/.test(email)) { window.mostrarToast("Informe um e-mail válido.", "error"); return; }
+  if (senha.length < 6) { window.mostrarToast("A senha inicial deve ter ao menos 6 caracteres.", "error"); return; }
   const btn = document.getElementById("btnSalvarUsu");
-  btn.disabled = true; btn.textContent = "Salvando...";
+  btn.disabled = true; btn.textContent = "Criando...";
   try {
-    await setDoc(doc(db, "vv_usuarios", uid), {
-      nome, email, role,
-      ativo: true,
-      criadoEm: serverTimestamp(),
-      atualizadoEm: serverTimestamp(),
-      ultimoLoginEm: null
+    await requisitarApiAdmin("/api/usuarios", {
+      method: "POST",
+      body: JSON.stringify({ nome, email, senha, role })
     });
     window.fecharModal();
-    window.mostrarToast("Usuário registrado!", "success");
+    window.mostrarToast("Usuário criado e liberado para acessar.", "success");
     carregarUsuarios();
   } catch (err) {
-    window.mostrarToast("Erro ao registrar usuário.", "error");
+    window.mostrarToast(err.message || "Não foi possível criar o usuário.", "error");
     btn.disabled = false; btn.textContent = "Registrar Usuário";
   }
 }
