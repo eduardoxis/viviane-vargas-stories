@@ -8,7 +8,9 @@ service cloud.firestore {
 
     function ehAdmin() {
       return autenticado() &&
-        get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "admin";
+        (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "admin" ||
+         (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles is list &&
+          get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles.hasAny(["admin"])));
     }
 
     // ── Usuários do sistema ──────────────────────────────────

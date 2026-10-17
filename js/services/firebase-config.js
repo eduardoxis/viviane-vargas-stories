@@ -16,4 +16,9 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db   = getFirestore(app);
+
+// Sessão isolada: cadastrar uma conta não desconecta o administrador atual.
+const appCadastro = initializeApp(firebaseConfig, "vv-cadastro-usuarios");
+export const authCadastro = getAuth(appCadastro);
+
 export default app;

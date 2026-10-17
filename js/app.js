@@ -1,6 +1,6 @@
 
-import { auth, db }    from "./services/firebase-config.js";
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+import { auth, authCadastro, db } from "./services/firebase-config.js";
+import { createUserWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 import { doc, getDoc, collection, getDocs, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { formatarMoeda, escHtml } from "./utils/database.js";
 import { iniciarProdutos }    from "./modules/produtos.js";
@@ -11,7 +11,6 @@ import { iniciarDespesas }    from "./modules/despesas.js";
 import { iniciarCaixa }       from "./modules/caixa.js";
 import { iniciarVendas }      from "./modules/vendas.js";
 import { iniciarRelatorios }  from "./modules/relatorios.js";
-import { requisitarApiAdmin } from "./services/api.js";
 
 // ── Globais necessários ────────────────────────────────────────
 window.abrirModal = function(titulo, bodyHTML, footerHTML = "") {
@@ -427,12 +426,12 @@ function abrirModalNovoUsuario() {
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.5"/></svg>
           </button>
         </div></div>
-      <div><label class="field-label">Cargo</label>
-        <select id="mUsuRole" class="field-input--plain">
-          <option value="funcionario">Funcionário</option>
-          <option value="operador_caixa">Operador de caixa</option>
-          <option value="admin">Administrador</option>
-        </select></div>
+      <div><label class="field-label">Cargos</label>
+        <div class="form-usuario-cargos">
+          <label class="checkbox-cargo"><input type="checkbox" name="mUsuRole" value="funcionario" checked> Funcionário</label>
+          <label class="checkbox-cargo"><input type="checkbox" name="mUsuRole" value="operador_caixa"> Operador de caixa</label>
+          <label class="checkbox-cargo"><input type="checkbox" name="mUsuRole" value="admin"> Administrador</label>
+        </div></div>
     </div>`,
     `<button class="btn-ghost" id="btnCancUsu">Cancelar</button>
      <button class="btn-primary" id="btnSalvarUsu">Registrar Usuário</button>`);
@@ -456,22 +455,36 @@ async function salvarNovoUsuario() {
   const nome  = document.getElementById("mUsuNome").value.trim();
   const email = document.getElementById("mUsuEmail").value.trim();
   const senha = document.getElementById("mUsuSenha").value;
-  const role  = document.getElementById("mUsuRole").value;
+  const roles = Array.from(document.querySelectorAll('input[name="mUsuRole"]:checked')).map((campo) => campo.value);
 
   if (!nome || !email || !senha) { window.mostrarToast("Preencha todos os campos obrigatórios.", "error"); return; }
   if (!/^\S+@\S+\.\S+$/.test(email)) { window.mostrarToast("Informe um e-mail válido.", "error"); return; }
   if (senha.length < 6) { window.mostrarToast("A senha inicial deve ter ao menos 6 caracteres.", "error"); return; }
+  if (!roles.length) { window.mostrarToast("Selecione ao menos um cargo.", "error"); return; }
   const btn = document.getElementById("btnSalvarUsu");
   btn.disabled = true; btn.textContent = "Criando...";
   try {
-    await requisitarApiAdmin("/api/usuarios", {
-      method: "POST",
-      body: JSON.stringify({ nome, email, senha, role })
+    // Mesma lógica da Papelaria: Auth no navegador e perfil no Firestore.
+    // A instância secundária mantém a sessão do administrador principal.
+    const credencial = await createUserWithEmailAndPassword(authCadastro, email, senha);
+    const rolePrincipal = roles.includes("admin") ? "admin" : roles.includes("operador_caixa") ? "operador_caixa" : "funcionario";
+    await setDoc(doc(db, "vv_usuarios", credencial.user.uid), {
+      nome,
+      email: email.toLowerCase(),
+      roles,
+      role: rolePrincipal,
+      ativo: true,
+      criadoEm: serverTimestamp(),
+      atualizadoEm: serverTimestamp(),
+      ultimoLoginEm: null,
+      criadoPor: _usuario?.uid || null
     });
+    await signOut(authCadastro);
     window.fecharModal();
     window.mostrarToast("Usuário criado e liberado para acessar.", "success");
     carregarUsuarios();
   } catch (err) {
+    await signOut(authCadastro).catch(() => {});
     window.mostrarToast(err.message || "Não foi possível criar o usuário.", "error");
     btn.disabled = false; btn.textContent = "Registrar Usuário";
   }
