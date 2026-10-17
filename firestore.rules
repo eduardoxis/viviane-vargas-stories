@@ -13,6 +13,17 @@ service cloud.firestore {
           get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles.hasAny(["admin"])));
     }
 
+    function ehOperadorCaixa() {
+      return autenticado() &&
+        (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "operador_caixa" ||
+         (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles is list &&
+          get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles.hasAny(["operador_caixa"])));
+    }
+
+    function podeOperarCaixa() {
+      return ehAdmin() || ehOperadorCaixa();
+    }
+
     // ── Usuários do sistema ──────────────────────────────────
     match /vv_usuarios/{uid} {
       allow read:   if autenticado() && (request.auth.uid == uid || ehAdmin());
@@ -43,7 +54,10 @@ service cloud.firestore {
       allow create, update, delete: if ehAdmin();
     }
     match /prom_compras/{id} {
-      allow read, write: if ehAdmin();
+      // A compra fiada é criada pelo Caixa; apenas admin pode consultá-la ou alterá-la.
+      allow read: if ehAdmin();
+      allow create: if podeOperarCaixa();
+      allow update, delete: if ehAdmin();
     }
     match /prom_pagamentos/{id} {
       allow read, write: if ehAdmin();

@@ -1338,51 +1338,57 @@ async function finalizarVendaPDV() {
     // O mesmo ID é usado durante toda a tentativa; uma reentrada não cria outra venda.
     _vendaEmFinalizacaoId ||= crypto.randomUUID();
     const vendaRef = doc(db, COL_VENDAS, _vendaEmFinalizacaoId);
-    await setDoc(vendaRef, {
-      numero,
-      data: Timestamp.fromDate(new Date()),
-      total,
-      itens: _itensVenda.length,
-      formaPagamento: formaPagamentoFinal,
-      pixOrigem: forma === "PIX" ? document.getElementById("pdvPixOrigem").value : "",
-      pagamentos: pagamentosSplit,
-      descontoTotal: _descontoTotal,
-      acrescimo: _acrescimo,
-      cpfCnpj: document.getElementById("pdvCpfCnpj").value.trim(),
-      observacoes: document.getElementById("pdvObservacao").value.trim(),
-      clienteFiadoId: _clienteFiado?.id || "",
-      clienteFiadoNome: _clienteFiado?.nome || "",
-      operador: _dadosUsuario?.nome || "—",
-      operadorId: _usuarioId,
-      sessaoId: _sessaoCaixa?.id || "",
-      status: "concluida",
-      criadoEm: serverTimestamp()
-    });
+    const vendaJaRegistrada = (await getDoc(vendaRef)).exists();
 
-    await Promise.all(_itensVenda.map(async it => {
-      await addDoc(collection(db, COL_ITENS), {
-        vendaId: vendaRef.id, produtoId: it.produtoId, nome: it.nome,
-        qtd: it.qtd, precoUnit: it.precoUnit,
-        desconto: itemDescontoReais(it), total: itemTotal(it)
+    // Se uma etapa posterior falhar (por exemplo, lançamento do fiado),
+    // uma nova tentativa conclui somente o que falta: não duplica itens nem baixa o estoque outra vez.
+    if (!vendaJaRegistrada) {
+      await setDoc(vendaRef, {
+        numero,
+        data: Timestamp.fromDate(new Date()),
+        total,
+        itens: _itensVenda.length,
+        formaPagamento: formaPagamentoFinal,
+        pixOrigem: forma === "PIX" ? document.getElementById("pdvPixOrigem").value : "",
+        pagamentos: pagamentosSplit,
+        descontoTotal: _descontoTotal,
+        acrescimo: _acrescimo,
+        cpfCnpj: document.getElementById("pdvCpfCnpj").value.trim(),
+        observacoes: document.getElementById("pdvObservacao").value.trim(),
+        clienteFiadoId: _clienteFiado?.id || "",
+        clienteFiadoNome: _clienteFiado?.nome || "",
+        operador: _dadosUsuario?.nome || "—",
+        operadorId: _usuarioId,
+        sessaoId: _sessaoCaixa?.id || "",
+        status: "concluida",
+        criadoEm: serverTimestamp()
       });
-      const prod = _produtos.find(p => p.id === it.produtoId);
-      if (prod) {
-        const qtdAntes = prod.estoque || 0;
-        const qtdDepois = Math.max(0, qtdAntes - it.qtd);
-        await updateDoc(doc(db, COL_PRODUTOS, it.produtoId), { estoque: qtdDepois });
-        await addDoc(collection(db, COL_HIST), {
-          produtoId: it.produtoId,
-          nomeProduto: it.nome,
-          tipo: "venda",
-          qtdAntes,
-          qtdDepois,
-          delta: qtdDepois - qtdAntes,
-          motivo: `Venda #${numero}`,
-          operador: _dadosUsuario?.nome || "—",
-          criadoEm: serverTimestamp()
+
+      await Promise.all(_itensVenda.map(async it => {
+        await addDoc(collection(db, COL_ITENS), {
+          vendaId: vendaRef.id, produtoId: it.produtoId, nome: it.nome,
+          qtd: it.qtd, precoUnit: it.precoUnit,
+          desconto: itemDescontoReais(it), total: itemTotal(it)
         });
-      }
-    }));
+        const prod = _produtos.find(p => p.id === it.produtoId);
+        if (prod) {
+          const qtdAntes = prod.estoque || 0;
+          const qtdDepois = Math.max(0, qtdAntes - it.qtd);
+          await updateDoc(doc(db, COL_PRODUTOS, it.produtoId), { estoque: qtdDepois });
+          await addDoc(collection(db, COL_HIST), {
+            produtoId: it.produtoId,
+            nomeProduto: it.nome,
+            tipo: "venda",
+            qtdAntes,
+            qtdDepois,
+            delta: qtdDepois - qtdAntes,
+            motivo: `Venda #${numero}`,
+            operador: _dadosUsuario?.nome || "—",
+            criadoEm: serverTimestamp()
+          });
+        }
+      }));
+    }
 
     if (forma === "Fiado") {
       const descricaoItens = _itensVenda.map(i => `${i.qtd}x ${i.nome}`).join(", ");
