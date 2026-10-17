@@ -752,22 +752,36 @@ body.valores-ocultos .prom-valor-sensivel { filter: blur(8px); user-select: none
   margin-bottom: 0;
   overflow: hidden;
 }
-.pdv-left, .pdv-right { min-height: 0; gap: var(--space-4); overscroll-behavior: contain; }
-.pdv-left { overflow-y: auto; padding-right: 4px; }
-.pdv-right { overflow-y: auto; padding-right: 4px; }
+.pdv-left, .pdv-right { min-height: 0; gap: 12px; overflow: hidden; }
+.pdv-left { padding-right: 0; }
+.pdv-right { padding-right: 0; }
 .pdv-itens-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .pdv-itens-tablewrap { flex: 1; min-height: 0; max-height: none; overflow: auto; }
 .pdv-itens-tablewrap .data-table { min-width: 620px; }
 .pdv-itens-tablewrap td:nth-child(2) { min-width: 190px; white-space: normal; }
 .pdv-resumo-card { flex: 0 0 auto; }
-.pdv-pagamento-card { flex: 0 0 auto; min-height: 0; }
-.pdv-atalhos-card { padding: 12px; }
-.pdv-atalhos-grid { gap: 7px; }
-.pdv-atalho-card { padding: 6px 8px; gap: 0; }
-.pdv-atalho-letra { margin-bottom: 2px; width: 20px; height: 20px; }
-.pdv-atalho-card strong { font-size: 0.76rem; line-height: 1.2; }
-.pdv-atalho-card small { font-size: 0.66rem; line-height: 1.2; }
-.pdv-atalhos-legenda { margin-top: 10px; line-height: 1.3; }
+.pdv-terminal-card { flex: 0 0 auto; padding: 14px; }
+.pdv-terminal-input { padding: 9px 11px; font-size: var(--text-sm); }
+.pdv-hint { margin-top: 6px; line-height: 1.25; }
+.pdv-atalhos-card { flex: 1 1 0; min-height: 0; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
+.pdv-atalhos-card .pdv-section-title { margin-bottom: 8px; }
+.pdv-atalhos-grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 5px; }
+.pdv-atalho-card { min-height: 0; padding: 4px 7px; gap: 0; overflow: hidden; }
+.pdv-atalho-letra { margin-bottom: 1px; width: 18px; height: 18px; font-size: .62rem; }
+.pdv-atalho-card strong { font-size: 0.7rem; line-height: 1.1; }
+.pdv-atalho-card small { font-size: 0.59rem; line-height: 1.12; }
+.pdv-atalhos-legenda { flex: 0 0 auto; margin: 7px 0 0; font-size: .61rem; line-height: 1.2; }
+.pdv-resumo-card { padding: 14px; }
+.pdv-resumo-card .pdv-section-title { margin-bottom: 6px; }
+.pdv-resumo-linha { padding: 3px 0; }
+.pdv-desconto-controls { gap: 7px; margin-top: 10px; }
+.pdv-toggle-btn { padding: 6px 8px; }
+.pdv-pagamento-card { flex: 1 1 0; min-height: 0; padding: 14px; overflow: hidden; }
+.pdv-pagamento-card .pdv-section-title { margin-bottom: 8px; }
+.pdv-pagamento-card .field-label { margin-bottom: 4px; }
+.pdv-pagamento-card .field-input--plain { padding: 7px 9px; }
+.pdv-pagamento-card .pdv-grid-2, .pdv-pagamento-card .pdv-extra-fields { gap: 8px; margin-top: 9px; }
+.pdv-btn-finalizar { margin-top: 10px; padding: 11px; }
 #pdvPixOrigemBox { margin-top: var(--space-3); }
 
 body.modo-foco { overflow: hidden; background: var(--gray-50); }
