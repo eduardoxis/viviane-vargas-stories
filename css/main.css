@@ -753,7 +753,7 @@ body.valores-ocultos .prom-valor-sensivel { filter: blur(8px); user-select: none
   overflow: hidden;
 }
 .pdv-left, .pdv-right { min-height: 0; gap: 12px; overflow: hidden; }
-.pdv-left { padding-right: 0; }
+.pdv-left { padding-right: 4px; }
 .pdv-right { padding-right: 0; }
 .pdv-itens-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .pdv-itens-tablewrap { flex: 1; min-height: 0; max-height: none; overflow: auto; }
@@ -763,13 +763,13 @@ body.valores-ocultos .prom-valor-sensivel { filter: blur(8px); user-select: none
 .pdv-terminal-card { flex: 0 0 auto; padding: 14px; }
 .pdv-terminal-input { padding: 9px 11px; font-size: var(--text-sm); }
 .pdv-hint { margin-top: 6px; line-height: 1.25; }
-.pdv-atalhos-card { flex: 1 1 0; min-height: 0; padding: 10px; display: flex; flex-direction: column; overflow: hidden; }
+.pdv-atalhos-card { flex: 1 1 0; min-height: 0; padding: 12px; display: flex; flex-direction: column; overflow: hidden; }
 .pdv-atalhos-card .pdv-section-title { margin-bottom: 8px; }
-.pdv-atalhos-grid { flex: 1; min-height: 0; grid-auto-rows: minmax(0, 1fr); gap: 5px; }
-.pdv-atalho-card { min-height: 0; padding: 4px 7px; gap: 0; overflow: hidden; }
-.pdv-atalho-letra { margin-bottom: 1px; width: 18px; height: 18px; font-size: .62rem; }
-.pdv-atalho-card strong { font-size: 0.7rem; line-height: 1.1; }
-.pdv-atalho-card small { font-size: 0.59rem; line-height: 1.12; }
+.pdv-atalhos-grid { flex: 1; min-height: 0; overflow-y: auto; align-content: start; gap: 8px; padding-right: 3px; }
+.pdv-atalho-card { min-height: 82px; padding: 8px 9px; gap: 1px; }
+.pdv-atalho-letra { margin-bottom: 3px; width: 21px; height: 21px; font-size: .68rem; }
+.pdv-atalho-card strong { font-size: 0.78rem; line-height: 1.2; }
+.pdv-atalho-card small { font-size: 0.67rem; line-height: 1.25; }
 .pdv-atalhos-legenda { flex: 0 0 auto; margin: 7px 0 0; font-size: .61rem; line-height: 1.2; }
 .pdv-resumo-card { padding: 14px; }
 .pdv-resumo-card .pdv-section-title { margin-bottom: 6px; }
@@ -798,6 +798,9 @@ body.modo-operador-caixa .content-area { padding: 12px; }
 @media (max-width: 1180px) {
   .pdv-grid { grid-template-columns: minmax(210px, .8fr) minmax(400px, 1.35fr); height: auto; overflow: visible; }
   .pdv-left { max-height: none; overflow: visible; }
+  .pdv-atalhos-card { display: block; min-height: auto; overflow: visible; }
+  .pdv-atalhos-grid { display: grid; min-height: auto; overflow: visible; grid-auto-rows: auto; }
+  .pdv-atalho-card { min-height: 82px; }
   .pdv-right { grid-column: 1 / -1; display: grid; grid-template-columns: .9fr 1.1fr; overflow: visible; }
   .pdv-pagamento-card { overflow: visible; }
   .pdv-itens-card { min-height: 520px; }

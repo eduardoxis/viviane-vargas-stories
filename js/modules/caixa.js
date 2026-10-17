@@ -1304,7 +1304,7 @@ async function finalizarVendaPDV() {
     _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return;
   }
 
-  const { total } = calcularTotaisPDV();
+  const { subtotal, descontoItens, descTotalReais, acrescimoReais, total } = calcularTotaisPDV();
   if (forma === "Dinheiro") {
     const recebido = parseFloat(document.getElementById("pdvValorRecebido").value) || 0;
     if (recebido < total) { window.mostrarToast("Valor recebido insuficiente.", "error"); _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return; }
