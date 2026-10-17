@@ -1,6 +1,6 @@
 // caixa.js — Módulo Caixa — Gerência Viviane Vargas Stories (Terminal PDV)
 import {
-  collection, doc, addDoc, getDoc, getDocs, updateDoc,
+  collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc,
   query, where, orderBy, limit, serverTimestamp, Timestamp, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../services/firebase-config.js";
@@ -15,6 +15,7 @@ const COL_SESSOES  = "vv_caixa_sessoes";
 const COL_HIST     = "vv_estoque_historico";
 
 let _dadosUsuario = null;
+let _usuarioId = "";
 let _sessaoCaixa = null; // { id, status, valorInicial, operadorAbertura, abertura, sangrias: [] }
 
 // ── Estado do Terminal PDV ───────────────────────────────────
@@ -28,10 +29,13 @@ let _clienteFiado = null; // { id, nome }
 let _pdvIniciado = false;
 let _splitPagamentos = []; // [{ forma, valor }] usado quando formaPagamento === "Múltiplo"
 let _splitSeq = 0;
+let _isFinalizing = false;
+let _vendaEmFinalizacaoId = null;
 const FORMAS_SPLIT = ["Dinheiro", "PIX", "Cartão de Débito", "Cartão de Crédito"];
 
 export function iniciarCaixa(usuario, dadosUsuario) {
   _dadosUsuario = dadosUsuario;
+  _usuarioId = usuario?.uid || "";
 
   // Garante que o PDV não aparece enquanto o estado não é carregado
   const pdvGrid = document.getElementById("pdvGridWrap");
@@ -39,7 +43,10 @@ export function iniciarCaixa(usuario, dadosUsuario) {
 
   document.addEventListener("navegacao", (e) => {
     if (e.detail.page === "caixa") entrarPaginaCaixa();
+    else sairModoFoco();
   });
+  document.addEventListener("fullscreenchange", sincronizarModoFoco);
+  window.addEventListener("resize", sincronizarModoFoco);
 }
 
 // ══════════════════════════════════════════════════════════════
@@ -90,6 +97,7 @@ function renderHeaderCaixa(sessao) {
     <span class="caixa-status-badge caixa-status-badge--aberto"><span class="caixa-status-dot"></span> Aberto</span>
     <span style="font-size:var(--text-xs);color:var(--gray-400);margin-left:8px">por <strong>${escHtml(sessao.operadorAbertura || "—")}</strong> às ${ab.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}</span>`;
   actionsEl.innerHTML = `
+    <button class="btn-ghost" id="btnTelaCheiaCaixa" title="Alternar tela cheia">Tela cheia</button>
     <button class="btn-ghost" id="btnSangriaCaixa">
       <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path d="M4 4a2 2 0 00-2 2v1h16V6a2 2 0 00-2-2H4z"/><path fill-rule="evenodd" d="M18 9H2v5a2 2 0 002 2h12a2 2 0 002-2V9zM4 13a1 1 0 011-1h1a1 1 0 110 2H5a1 1 0 01-1-1zm5-1a1 1 0 100 2h1a1 1 0 100-2H9z" clip-rule="evenodd"/></svg>
       Sangria
@@ -102,9 +110,32 @@ function renderHeaderCaixa(sessao) {
       <svg viewBox="0 0 20 20" fill="currentColor" width="15" height="15"><path fill-rule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clip-rule="evenodd"/></svg>
       Fechar Caixa
     </button>`;
+  document.getElementById("btnTelaCheiaCaixa")?.addEventListener("click", alternarTelaCheia);
   document.getElementById("btnSangriaCaixa")?.addEventListener("click", abrirModalSangria);
   document.getElementById("btnHistoricoCaixa")?.addEventListener("click", abrirHistoricoCaixa);
   document.getElementById("btnFecharCaixa")?.addEventListener("click", abrirModalFechamentoCaixa);
+}
+
+async function alternarTelaCheia() {
+  try {
+    if (document.fullscreenElement) await document.exitFullscreen();
+    else await document.documentElement.requestFullscreen();
+  } catch {
+    window.mostrarToast("O navegador bloqueou a tela cheia.", "warning");
+  }
+}
+
+function sincronizarModoFoco() {
+  const pareceF11 = window.innerHeight >= screen.height - 8;
+  const ativo = Boolean(document.fullscreenElement) || pareceF11;
+  document.body.classList.toggle("modo-foco", ativo && !document.getElementById("page-caixa")?.hidden);
+  const btn = document.getElementById("btnTelaCheiaCaixa");
+  if (btn) btn.textContent = ativo ? "Sair da tela cheia" : "Tela cheia";
+}
+
+function sairModoFoco() {
+  document.body.classList.remove("modo-foco");
+  if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
 }
 
 function mostrarEstadoCaixa(sessao) {
@@ -156,7 +187,7 @@ async function confirmarAberturaCaixa() {
       valorInicial,
       observacaoAbertura: obs,
       operadorAbertura: _dadosUsuario?.nome || "—",
-      operadorAberturId: _dadosUsuario?.uid || "",
+      operadorAberturaId: _usuarioId,
       abertura: serverTimestamp(),
       sangrias: [],
       fechamento: null,
@@ -229,16 +260,38 @@ async function confirmarSangria() {
   const btn = document.getElementById("btnConfSangria");
   btn.disabled = true; btn.textContent = "Salvando...";
   try {
-    const novaSangria = { valor, motivo, operador: _dadosUsuario?.nome || "—", hora: Timestamp.fromDate(new Date()) };
+    const novaSangria = {
+      numero: (_sessaoCaixa.sangrias || []).length + 1,
+      valor, motivo, operador: _dadosUsuario?.nome || "—", operadorId: _usuarioId, hora: Timestamp.fromDate(new Date())
+    };
     await updateDoc(doc(db, COL_SESSOES, _sessaoCaixa.id), { sangrias: arrayUnion(novaSangria) });
     _sessaoCaixa.sangrias = [...(_sessaoCaixa.sangrias || []), novaSangria];
     window.fecharModal();
     window.mostrarToast(`Sangria de ${formatarMoeda(valor)} registrada.`, "success");
+    abrirComprovanteSangria(novaSangria);
   } catch (err) {
     console.error(err);
     window.mostrarToast("Erro ao registrar sangria.", "error");
     btn.disabled = false; btn.textContent = "Registrar Sangria";
   }
+}
+
+function abrirComprovanteSangria(sangria) {
+  const data = sangria.hora?.toDate?.() || new Date();
+  const conteudo = `
+    <div class="comprovante-pdv">
+      <h2>COMPROVANTE DE SANGRIA</h2>
+      <p><strong>Número:</strong> #${sangria.numero}</p>
+      <p><strong>Operador:</strong> ${escHtml(sangria.operador)}</p>
+      <p><strong>Data/hora:</strong> ${data.toLocaleString("pt-BR")}</p>
+      <p><strong>Valor:</strong> ${formatarMoeda(sangria.valor)}</p>
+      <p><strong>Motivo:</strong> ${escHtml(sangria.motivo || "Não informado")}</p>
+    </div>`;
+  window.abrirModal("Comprovante de Sangria", conteudo,
+    `<button class="btn-ghost" id="btnFecharCompSangria">Fechar</button>
+     <button class="btn-primary" id="btnImprimirCompSangria">Imprimir / Salvar PDF</button>`);
+  document.getElementById("btnFecharCompSangria").onclick = () => window.fecharModal();
+  document.getElementById("btnImprimirCompSangria").onclick = () => imprimirConteudo("Comprovante de sangria", conteudo);
 }
 
 // ── Modal: Fechar Caixa ──────────────────────────────────────
@@ -499,6 +552,8 @@ async function iniciarTerminalPDV() {
     document.getElementById("pdvDinheiroBox").style.display = forma === "Dinheiro" ? "grid" : "none";
     document.getElementById("pdvFiadoBox").hidden = forma !== "Fiado";
     document.getElementById("pdvSplitBox").hidden = forma !== "Múltiplo";
+    document.getElementById("pdvPixOrigemBox").hidden = forma !== "PIX";
+    if (forma !== "PIX") document.getElementById("pdvPixOrigem").value = "";
     if (forma === "Fiado") document.getElementById("pdvClienteInput").focus();
     if (forma === "Múltiplo") {
       if (!_splitPagamentos.length) {
@@ -1085,7 +1140,7 @@ function renderSplitBox() {
 }
 
 function atualizarResumoSplit() {
-  const { total } = calcularTotaisPDV();
+  const { subtotal, descontoItens, descTotalReais, acrescimoReais, total } = calcularTotaisPDV();
   const somado = _splitPagamentos.reduce((s, p) => s + (p.valor || 0), 0);
   const restante = Math.round((total - somado) * 100) / 100;
   document.getElementById("pdvSplitTotalVenda").textContent = formatarMoeda(total);
@@ -1160,21 +1215,23 @@ function abrirModalNovoClienteFiado() {
 
 // ── Histórico (comando H) ───────────────────────────────────────
 async function abrirHistoricoVendasPDV() {
-  // Admin: abre a aba completa de histórico (js/vendas.js). Funcionário continua com a lista rápida.
-  if (typeof window.abrirHistoricoVendas === "function") { window.abrirHistoricoVendas(); return; }
+  // O Caixa mostra somente o resumo do dia/sessão. O detalhamento permanece em Relatórios.
   try {
-    const snap = await getDocs(query(collection(db, COL_VENDAS), orderBy("criadoEm", "desc"), limit(20)));
+    const snap = _sessaoCaixa?.id
+      ? await getDocs(query(collection(db, COL_VENDAS), where("sessaoId", "==", _sessaoCaixa.id), limit(100)))
+      : await getDocs(query(collection(db, COL_VENDAS), orderBy("criadoEm", "desc"), limit(20)));
     const linhas = [];
     snap.forEach(d => linhas.push({ id: d.id, ...d.data() }));
+    linhas.sort((a, b) => (b.criadoEm?.toMillis?.() || 0) - (a.criadoEm?.toMillis?.() || 0));
     const body = linhas.length
       ? `<div class="table-wrap"><table class="data-table">
-          <thead><tr><th>#</th><th>Data</th><th>Pagamento</th><th>Total</th></tr></thead>
+          <thead><tr><th>#</th><th>Hora</th><th>Pagamento</th><th>Cliente</th><th>Operador</th><th>Itens</th><th>Total</th></tr></thead>
           <tbody>${linhas.map(v => {
             const dt = v.data?.toDate?.() || new Date();
-            return `<tr><td>#${v.numero || "—"}</td><td>${dt.toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})}</td><td>${escHtml(v.formaPagamento||"—")}</td><td><strong>${formatarMoeda(v.total||0)}</strong></td></tr>`;
+            return `<tr><td>#${v.numero || "—"}</td><td>${dt.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"})}</td><td>${escHtml(v.formaPagamento||"—")}</td><td>${escHtml(v.clienteFiadoNome||"—")}</td><td>${escHtml(v.operador||"—")}</td><td>${v.itens||0}</td><td><strong>${formatarMoeda(v.total||0)}</strong></td></tr>`;
           }).join("")}</tbody></table></div>`
       : `<p class="empty-cell">Nenhuma venda registrada ainda.</p>`;
-    window.abrirModal("Histórico de Vendas (últimas 20)", body, `<button class="btn-primary" id="btnFecharHist">Fechar</button>`);
+    window.abrirModal("Vendas de hoje", body, `<button class="btn-primary" id="btnFecharHist">Fechar</button>`);
     document.getElementById("btnFecharHist").onclick = () => window.fecharModal();
   } catch (err) {
     console.error(err);
@@ -1209,6 +1266,8 @@ function limparVendaPDV() {
   document.querySelectorAll(".pdv-toggle-btn").forEach(b => b.classList.toggle("pdv-toggle-btn--active", b.dataset.tipo === "rs"));
   document.getElementById("pdvFormaPag").value = "Dinheiro";
   document.getElementById("pdvDinheiroBox").style.display = "grid";
+  document.getElementById("pdvPixOrigemBox").hidden = true;
+  document.getElementById("pdvPixOrigem").value = "";
   document.getElementById("pdvFiadoBox").hidden = true;
   document.getElementById("pdvSplitBox").hidden = true;
   document.getElementById("pdvSplitRows").innerHTML = "";
@@ -1224,47 +1283,60 @@ function limparVendaPDV() {
 
 // ── Finalizar venda ──────────────────────────────────────────────
 async function finalizarVendaPDV() {
-  if (!_itensVenda.length) { window.mostrarToast("Adicione ao menos um produto.", "error"); return; }
+  // A trava acontece antes de qualquer await: clique, Enter e F não reentram.
+  if (_isFinalizing) return;
+  _isFinalizing = true;
+  const btn = document.getElementById("btnFinalizarVendaPDV");
+  if (btn) { btn.disabled = true; btn.style.opacity = "0.6"; }
+
+  if (!_itensVenda.length) { window.mostrarToast("Adicione ao menos um produto.", "error"); _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return; }
   const forma = document.getElementById("pdvFormaPag").value;
 
   if (forma === "Fiado" && !_clienteFiado) {
     window.mostrarToast("Selecione um cliente cadastrado ou clique em \"+ Novo Cliente\".", "error");
     document.getElementById("pdvClienteInput").focus();
-    return;
+    _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return;
+  }
+
+  if (forma === "PIX" && !document.getElementById("pdvPixOrigem").value) {
+    window.mostrarToast("Informe se o PIX foi pela maquininha ou direto.", "error");
+    document.getElementById("pdvPixOrigem").focus();
+    _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return;
   }
 
   const { total } = calcularTotaisPDV();
   if (forma === "Dinheiro") {
     const recebido = parseFloat(document.getElementById("pdvValorRecebido").value) || 0;
-    if (recebido < total) { window.mostrarToast("Valor recebido insuficiente.", "error"); return; }
+    if (recebido < total) { window.mostrarToast("Valor recebido insuficiente.", "error"); _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return; }
   }
 
   let pagamentosSplit = [];
   let formaPagamentoFinal = forma;
   if (forma === "Múltiplo") {
     pagamentosSplit = _splitPagamentos.filter(p => (p.valor || 0) > 0).map(p => ({ forma: p.forma, valor: p.valor }));
-    if (!pagamentosSplit.length) { window.mostrarToast("Informe ao menos um valor na divisão de pagamento.", "error"); return; }
+    if (!pagamentosSplit.length) { window.mostrarToast("Informe ao menos um valor na divisão de pagamento.", "error"); _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return; }
     const somado = pagamentosSplit.reduce((s, p) => s + p.valor, 0);
     if (Math.abs(somado - total) >= 0.01) {
       window.mostrarToast(somado < total ? "A soma dos pagamentos é menor que o total da venda." : "A soma dos pagamentos ultrapassa o total da venda.", "error");
-      return;
+      _isFinalizing = false; if (btn) { btn.disabled = false; btn.style.opacity = "1"; } return;
     }
     formaPagamentoFinal = pagamentosSplit.map(p => p.forma).join(" + ");
   }
-
-  const btn = document.getElementById("btnFinalizarVendaPDV");
-  btn.disabled = true; btn.style.opacity = "0.6";
 
   try {
     const snapCount = await getDocs(collection(db, COL_VENDAS));
     const numero = snapCount.size + 1;
 
-    const vendaRef = await addDoc(collection(db, COL_VENDAS), {
+    // O mesmo ID é usado durante toda a tentativa; uma reentrada não cria outra venda.
+    _vendaEmFinalizacaoId ||= crypto.randomUUID();
+    const vendaRef = doc(db, COL_VENDAS, _vendaEmFinalizacaoId);
+    await setDoc(vendaRef, {
       numero,
       data: Timestamp.fromDate(new Date()),
       total,
       itens: _itensVenda.length,
       formaPagamento: formaPagamentoFinal,
+      pixOrigem: forma === "PIX" ? document.getElementById("pdvPixOrigem").value : "",
       pagamentos: pagamentosSplit,
       descontoTotal: _descontoTotal,
       acrescimo: _acrescimo,
@@ -1273,6 +1345,7 @@ async function finalizarVendaPDV() {
       clienteFiadoId: _clienteFiado?.id || "",
       clienteFiadoNome: _clienteFiado?.nome || "",
       operador: _dadosUsuario?.nome || "—",
+      operadorId: _usuarioId,
       sessaoId: _sessaoCaixa?.id || "",
       status: "concluida",
       criadoEm: serverTimestamp()
@@ -1323,7 +1396,10 @@ async function finalizarVendaPDV() {
       "success"
     );
 
+    imprimirViasVenda({ numero, subtotal, descontoItens, descontoTotal: descTotalReais, acrescimo: acrescimoReais, total, formaPagamento: formaPagamentoFinal, pixOrigem: forma === "PIX" ? document.getElementById("pdvPixOrigem").value : "", itens: _itensVenda, cpfCnpj: document.getElementById("pdvCpfCnpj").value.trim(), cliente: _clienteFiado?.nome || "", operador: _dadosUsuario?.nome || "—" });
+
     limparVendaPDV();
+    _vendaEmFinalizacaoId = null;
     // Recarrega estoque em memória
     const snapProd = await getDocs(query(collection(db, COL_PRODUTOS), orderBy("nome")));
     _produtos = []; snapProd.forEach(d => _produtos.push({ id: d.id, ...d.data() }));
@@ -1331,6 +1407,28 @@ async function finalizarVendaPDV() {
     console.error(err);
     window.mostrarToast("Erro ao finalizar venda.", "error");
   } finally {
-    btn.disabled = false; btn.style.opacity = "1";
+    _isFinalizing = false;
+    if (btn) { btn.disabled = false; btn.style.opacity = "1"; }
   }
+}
+
+function imprimirViasVenda(venda) {
+  const data = new Date().toLocaleString("pt-BR");
+  const itens = venda.itens.map(item => `<tr><td>${escHtml(item.nome)}<br><small>${item.qtd} × ${formatarMoeda(item.precoUnit)}</small></td><td>${formatarMoeda(itemTotal(item))}</td></tr>`).join("");
+  const dadosCliente = venda.cpfCnpj ? `<p>CPF/CNPJ: ${escHtml(venda.cpfCnpj)}</p>` : "";
+  const pix = venda.pixOrigem ? `<p>PIX: ${escHtml(venda.pixOrigem)}</p>` : "";
+  const ajustes = `${venda.descontoItens ? `<p>Desconto nos itens: -${formatarMoeda(venda.descontoItens)}</p>` : ""}${venda.descontoTotal ? `<p>Desconto total: -${formatarMoeda(venda.descontoTotal)}</p>` : ""}${venda.acrescimo ? `<p>Acréscimo: ${formatarMoeda(venda.acrescimo)}</p>` : ""}`;
+  const viaCliente = `<section class="cupom"><h2>VIA DO CLIENTE</h2><p>Venda #${venda.numero} · ${data}</p>${dadosCliente}<table>${itens}</table><hr>${ajustes}<p>Operador: ${escHtml(venda.operador)}</p><p>Pagamento: ${escHtml(venda.formaPagamento)}</p>${pix}<h3>Total: ${formatarMoeda(venda.total)}</h3><footer>Documento sem valor fiscal</footer></section>`;
+  const viaLojista = `<section class="cupom quebra"><h2>VIA DO LOJISTA</h2><p>Venda #${venda.numero} · ${data}</p><p>Operador: ${escHtml(venda.operador)}</p><p>Cliente: ${escHtml(venda.cliente || "Não informado")}</p><p>Pagamento: ${escHtml(venda.formaPagamento)}</p>${pix}<table>${itens}</table><hr><p>Subtotal: ${formatarMoeda(venda.subtotal)}</p>${ajustes}<h3>Total: ${formatarMoeda(venda.total)}</h3><footer>Documento sem valor fiscal</footer></section>`;
+  imprimirConteudo(`Venda ${venda.numero}`, `${viaCliente}${viaLojista}`);
+}
+
+function imprimirConteudo(titulo, conteudo) {
+  const janela = window.open("", "_blank", "width=420,height=700");
+  if (!janela) {
+    window.mostrarToast("Permita pop-ups para imprimir ou salvar o comprovante em PDF.", "warning");
+    return;
+  }
+  janela.document.write(`<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>${escHtml(titulo)}</title><style>@page{size:80mm auto;margin:5mm}body{font:12px monospace;color:#111;margin:0}.cupom{width:70mm}.cupom h2,.cupom h3{text-align:center}.cupom p{margin:5px 0}table{width:100%;border-collapse:collapse}td{padding:4px 0;vertical-align:top}td:last-child{text-align:right}footer{text-align:center;margin-top:14px;font-size:10px}.quebra{break-before:page;page-break-before:always}</style></head><body>${conteudo}<script>window.onload=()=>window.print();<\/script></body></html>`);
+  janela.document.close();
 }

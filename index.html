@@ -783,8 +783,7 @@
           </div>
         </div>
 
-        <div class="pdv-right">
-          <div class="card pdv-itens-card">
+        <div class="card pdv-itens-card">
             <div class="pdv-itens-header">
               <h3 class="pdv-section-title">Itens da Venda</h3>
               <button type="button" class="btn-ghost pdv-btn-limpar" id="btnLimparItensPDV">
@@ -802,8 +801,8 @@
                 </tbody>
               </table>
             </div>
-          </div>
-
+        </div>
+        <div class="pdv-right">
           <div class="card pdv-resumo-card">
             <h3 class="pdv-section-title">Resumo da Venda</h3>
             <div class="pdv-resumo-linha"><span>Subtotal</span><strong id="pdvSubtotal">R$ 0,00</strong></div>
@@ -841,6 +840,15 @@
               <option>Fiado</option>
               <option value="Múltiplo">Múltiplo (dividir pagamento)</option>
             </select>
+
+            <div id="pdvPixOrigemBox" hidden>
+              <label class="field-label">Origem do PIX *</label>
+              <select id="pdvPixOrigem" class="field-input--plain">
+                <option value="">Selecione a origem</option>
+                <option value="Maquininha">Maquininha</option>
+                <option value="PIX direto">PIX direto (celular/e-mail/chave)</option>
+              </select>
+            </div>
 
             <div id="pdvDinheiroBox" class="pdv-grid-2">
               <div>

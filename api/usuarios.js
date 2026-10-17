@@ -53,7 +53,7 @@ export default async function handler(req, res) {
     const nomeLimpo = String(nome || "").trim();
     const emailLimpo = String(email || "").trim().toLowerCase();
     const senhaInicial = String(senha || "");
-    const cargo = role === "admin" ? "admin" : "funcionario";
+    const cargo = ["admin", "operador_caixa"].includes(role) ? role : "funcionario";
 
     if (!nomeLimpo || nomeLimpo.length > 100) throw falhar("Informe um nome válido.");
     if (!/^\S+@\S+\.\S+$/.test(emailLimpo) || emailLimpo.length > 254) throw falhar("Informe um e-mail válido.");

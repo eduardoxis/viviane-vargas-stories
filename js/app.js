@@ -75,6 +75,7 @@ const titulos = {
 };
 
 function navegar(pageId) {
+  if (_dadosUsuario?.role === "operador_caixa" && pageId !== "caixa") pageId = "caixa";
   document.querySelectorAll(".page").forEach(p => {
     p.hidden = true; p.classList.remove("page--active");
   });
@@ -162,7 +163,7 @@ onAuthStateChanged(auth, async (user) => {
     const nome  = _dadosUsuario.nome || user.email;
     const role  = _dadosUsuario.role || "funcionario";
     document.getElementById("userName").textContent   = nome;
-    document.getElementById("userRole").textContent   = role === "admin" ? "Administrador" : "Funcionário";
+    document.getElementById("userRole").textContent   = role === "admin" ? "Administrador" : role === "operador_caixa" ? "Operador de caixa" : "Funcionário";
     document.getElementById("userAvatar").textContent = nome.charAt(0).toUpperCase();
 
     // Exibir itens admin
@@ -173,6 +174,14 @@ onAuthStateChanged(auth, async (user) => {
     } else {
       document.getElementById("dashAdminCards").hidden      = true;
       document.getElementById("dashFuncionarioCards").hidden = false;
+    }
+
+    const operadorCaixa = role === "operador_caixa";
+    document.body.classList.toggle("modo-operador-caixa", operadorCaixa);
+    if (operadorCaixa) {
+      document.querySelectorAll(".nav-item").forEach(item => { item.closest("li").hidden = item.dataset.page !== "caixa"; });
+      document.querySelector(".sidebar")?.setAttribute("hidden", "");
+      document.querySelector(".topbar")?.setAttribute("hidden", "");
     }
 
     // Iniciar módulos (uma única vez)
@@ -189,11 +198,12 @@ onAuthStateChanged(auth, async (user) => {
       iniciarConfiguracoes(user, _dadosUsuario);
     }
 
-    navegar("dashboard");
-    carregarDashboard(role);
+    navegar(operadorCaixa ? "caixa" : "dashboard");
+    if (!operadorCaixa) carregarDashboard(role);
 
   } else {
     _usuario = null; _dadosUsuario = null; _modulosIniciados = false;
+    document.body.classList.remove("modo-operador-caixa");
     window.location.replace("./login.html");
   }
 });
@@ -383,7 +393,7 @@ async function carregarUsuarios() {
       <tr>
         <td><strong style="color:var(--gray-800)">${u.nome || "—"}</strong></td>
         <td style="color:var(--gray-500)">${u.email || "—"}</td>
-        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F7EEDF":"#D1FAE5"};color:${u.role==="admin"?"#715338":"#065F46"}">${u.role==="admin"?"Administrador":"Funcionário"}</span></td>
+        <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${u.role==="admin"?"#F7EEDF":"#D1FAE5"};color:${u.role==="admin"?"#715338":"#065F46"}">${u.role==="admin"?"Administrador":u.role==="operador_caixa"?"Operador de caixa":"Funcionário"}</span></td>
         <td><span style="display:inline-flex;align-items:center;padding:3px 10px;border-radius:9999px;font-size:0.75rem;font-weight:600;background:${ativo?"#D1FAE5":"#FEE2E2"};color:${ativo?"#065F46":"#991B1B"}">${ativo?"Ativo":"Inativo"}</span></td>
         <td style="color:var(--gray-400);font-size:var(--text-sm)">${criadoEm}</td>
         <td style="color:var(--gray-400);font-size:var(--text-sm)">${ultimoLogin}</td>
@@ -420,6 +430,7 @@ function abrirModalNovoUsuario() {
       <div><label class="field-label">Cargo</label>
         <select id="mUsuRole" class="field-input--plain">
           <option value="funcionario">Funcionário</option>
+          <option value="operador_caixa">Operador de caixa</option>
           <option value="admin">Administrador</option>
         </select></div>
     </div>`,
