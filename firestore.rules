@@ -1,117 +1,75 @@
 rules_version = '2';
+
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function autenticado() {
-      return request.auth != null;
+    function autenticado() { return request.auth != null; }
+    function perfilAtual() {
+      return get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data;
     }
-
     function ehAdmin() {
-      return autenticado() &&
-        (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "admin" ||
-         (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles is list &&
-          get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles.hasAny(["admin"])));
+      return autenticado() && (perfilAtual().role == "admin" ||
+        (perfilAtual().roles is list && perfilAtual().roles.hasAny(["admin"])));
     }
-
     function ehOperadorCaixa() {
-      return autenticado() &&
-        (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.role == "operador_caixa" ||
-         (get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles is list &&
-          get(/databases/$(database)/documents/vv_usuarios/$(request.auth.uid)).data.roles.hasAny(["operador_caixa"])));
+      return autenticado() && (perfilAtual().role == "operador_caixa" ||
+        (perfilAtual().roles is list && perfilAtual().roles.hasAny(["operador_caixa"])));
     }
+    function podeOperarCaixa() { return ehAdmin() || ehOperadorCaixa(); }
 
-    function podeOperarCaixa() {
-      return ehAdmin() || ehOperadorCaixa();
-    }
-
-    // ── Usuários do sistema ──────────────────────────────────
+    // Usuários e acesso
     match /vv_usuarios/{uid} {
-      allow read:   if autenticado() && (request.auth.uid == uid || ehAdmin());
-      // O primeiro administrador é criado manualmente pelo Firebase Console.
-      // Nenhum usuário pode criar o próprio perfil ou se tornar administrador.
+      allow read: if autenticado() && (request.auth.uid == uid || ehAdmin());
       allow create, delete: if ehAdmin();
-      allow update: if ehAdmin() || (
-        autenticado() && request.auth.uid == uid &&
-        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["ultimoLoginEm"])
-      );
+      allow update: if ehAdmin() || (autenticado() && request.auth.uid == uid &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["ultimoLoginEm"]));
     }
 
-    // ── Produtos / Estoque ───────────────────────────────────
+    // Produtos: operador consulta e dá baixa somente no estoque.
     match /vv_produtos/{id} {
-      allow read:   if autenticado();
-      allow write:  if autenticado();
-    }
-
-    // ── Clientes ─────────────────────────────────────────────
-    match /vv_clientes/{id} {
-      allow read, write: if ehAdmin();
-    }
-
-    // ── Promissórias ─────────────────────────────────────────
-    match /prom_clientes/{id} {
-      // O operador precisa consultar clientes ao registrar venda fiada.
       allow read: if autenticado();
-      allow create, update, delete: if ehAdmin();
+      allow create, delete: if ehAdmin();
+      allow update: if ehAdmin() || (ehOperadorCaixa() &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(["estoque"]));
+    }
+
+    // Cliente e dívida de vendas fiadas.
+    match /prom_clientes/{id} {
+      allow read, create: if podeOperarCaixa();
+      allow update, delete: if ehAdmin();
     }
     match /prom_compras/{id} {
-      // A compra fiada é criada pelo Caixa; apenas admin pode consultá-la ou alterá-la.
       allow read: if ehAdmin();
       allow create: if podeOperarCaixa();
       allow update, delete: if ehAdmin();
     }
-    match /prom_pagamentos/{id} {
-      allow read, write: if ehAdmin();
-    }
 
-    // ── Vendas ───────────────────────────────────────────────
+    // Venda, desconto/acréscimo registrado na venda e baixa de estoque.
     match /vv_vendas/{id} {
-      allow read:   if autenticado();
-      allow create: if autenticado();
-      allow update: if autenticado();
-      allow delete: if ehAdmin();
+      allow read: if podeOperarCaixa();
+      allow create: if podeOperarCaixa() && request.resource.data.operadorId == request.auth.uid;
+      allow update, delete: if ehAdmin();
     }
-
     match /vv_venda_itens/{id} {
-      allow read:   if autenticado();
-      allow create: if autenticado();
-      allow delete: if ehAdmin();
+      allow read, create: if podeOperarCaixa();
+      allow update, delete: if ehAdmin();
     }
-
-    // ── Compras (Fornecedores) ────────────────────────────────
-    match /vv_compras_fornec/{id} {
-      allow read, write: if ehAdmin();
-    }
-
-    // ── Despesas ─────────────────────────────────────────────
-    match /vv_despesas/{id} {
-      allow read, write: if ehAdmin();
-    }
-
-    // ── Histórico de Estoque ─────────────────────────────────
     match /vv_estoque_historico/{id} {
-      allow read:   if autenticado();
-      allow create: if autenticado();
+      allow read, create: if podeOperarCaixa();
       allow update, delete: if ehAdmin();
     }
 
-    // ── Histórico de Custo / Margem ──────────────────────────
-    match /vv_custo_historico/{id} {
-      allow read:   if autenticado();
-      allow create: if autenticado();
-      allow update, delete: if ehAdmin();
-    }
-
-    // ── Caixa ────────────────────────────────────────────────
-    match /vv_caixa/{id} {
-      allow read, write: if ehAdmin();
-    }
-
-    // ── Sessões de Caixa (abertura/fechamento/sangria) ───────
+    // Abrir caixa, sangria, fechamento e histórico do turno.
     match /vv_caixa_sessoes/{id} {
-      allow read:   if autenticado();
-      allow create: if autenticado();
-      allow update: if autenticado();
+      allow read, create, update: if podeOperarCaixa();
       allow delete: if ehAdmin();
     }
+
+    // Módulos exclusivamente administrativos.
+    match /vv_clientes/{id} { allow read, write: if ehAdmin(); }
+    match /prom_pagamentos/{id} { allow read, write: if ehAdmin(); }
+    match /vv_compras_fornec/{id} { allow read, write: if ehAdmin(); }
+    match /vv_despesas/{id} { allow read, write: if ehAdmin(); }
+    match /vv_custo_historico/{id} { allow read, write: if ehAdmin(); }
+    match /vv_caixa/{id} { allow read, write: if ehAdmin(); }
   }
 }
