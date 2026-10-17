@@ -481,13 +481,21 @@ async function abrirHistoricoCaixa() {
 async function iniciarTerminalPDV() {
   // Recarrega produtos/clientes a cada entrada na página (estoque pode ter mudado)
   try {
-    const [snapProd, snapCli] = await Promise.all([
-      getDocs(query(collection(db, COL_PRODUTOS), orderBy("nome"))),
-      getDocs(query(collection(db, COL_CLI_PROM), orderBy("nome")))
-    ]);
+    const snapProd = await getDocs(query(collection(db, COL_PRODUTOS), orderBy("nome")));
     _produtos = []; snapProd.forEach(d => _produtos.push({ id: d.id, ...d.data() }));
+  } catch (err) {
+    console.error("Erro ao carregar produtos do Caixa:", err);
+    window.mostrarToast?.("Não foi possível carregar os produtos do Caixa.", "error");
+  }
+
+  try {
+    const snapCli = await getDocs(query(collection(db, COL_CLI_PROM), orderBy("nome")));
     _clientesProm = []; snapCli.forEach(d => _clientesProm.push({ id: d.id, ...d.data() }));
-  } catch (err) { console.error(err); }
+  } catch (err) {
+    // O terminal segue disponível; apenas o pagamento fiado fica sem sugestões.
+    console.error("Erro ao carregar clientes de fiado:", err);
+    _clientesProm = [];
+  }
 
   if (_pdvIniciado) { renderItensPDV(); return; } // listeners já presos, só recarrega dados
   _pdvIniciado = true;

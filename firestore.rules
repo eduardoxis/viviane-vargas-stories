@@ -38,7 +38,9 @@ service cloud.firestore {
 
     // ── Promissórias ─────────────────────────────────────────
     match /prom_clientes/{id} {
-      allow read, write: if ehAdmin();
+      // O operador precisa consultar clientes ao registrar venda fiada.
+      allow read: if autenticado();
+      allow create, update, delete: if ehAdmin();
     }
     match /prom_compras/{id} {
       allow read, write: if ehAdmin();
