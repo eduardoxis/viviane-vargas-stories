@@ -752,18 +752,22 @@ body.valores-ocultos .prom-valor-sensivel { filter: blur(8px); user-select: none
   margin-bottom: 0;
   overflow: hidden;
 }
-.pdv-left, .pdv-right { min-height: 0; gap: var(--space-4); }
-.pdv-left { overflow-y: auto; padding-right: 2px; }
-.pdv-right { overflow: hidden; }
+.pdv-left, .pdv-right { min-height: 0; gap: var(--space-4); overscroll-behavior: contain; }
+.pdv-left { overflow-y: auto; padding-right: 4px; }
+.pdv-right { overflow-y: auto; padding-right: 4px; }
 .pdv-itens-card { min-height: 0; display: flex; flex-direction: column; overflow: hidden; }
 .pdv-itens-tablewrap { flex: 1; min-height: 0; max-height: none; overflow: auto; }
 .pdv-itens-tablewrap .data-table { min-width: 620px; }
 .pdv-itens-tablewrap td:nth-child(2) { min-width: 190px; white-space: normal; }
 .pdv-resumo-card { flex: 0 0 auto; }
-.pdv-pagamento-card { flex: 1 1 auto; min-height: 0; overflow-y: auto; }
-.pdv-atalhos-card { padding: var(--space-4); }
-.pdv-atalho-card { padding: 8px 9px; }
-.pdv-atalho-card small { line-height: 1.25; }
+.pdv-pagamento-card { flex: 0 0 auto; min-height: 0; }
+.pdv-atalhos-card { padding: 12px; }
+.pdv-atalhos-grid { gap: 7px; }
+.pdv-atalho-card { padding: 6px 8px; gap: 0; }
+.pdv-atalho-letra { margin-bottom: 2px; width: 20px; height: 20px; }
+.pdv-atalho-card strong { font-size: 0.76rem; line-height: 1.2; }
+.pdv-atalho-card small { font-size: 0.66rem; line-height: 1.2; }
+.pdv-atalhos-legenda { margin-top: 10px; line-height: 1.3; }
 #pdvPixOrigemBox { margin-top: var(--space-3); }
 
 body.modo-foco { overflow: hidden; background: var(--gray-50); }
