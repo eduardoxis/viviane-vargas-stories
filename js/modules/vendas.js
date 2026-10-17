@@ -3,13 +3,14 @@
 // Mostra, para o dia escolhido: resumo, formas de pagamento, produtos mais vendidos
 // e a lista de vendas com o detalhe completo de cada uma (itens, descontos, cliente, etc.).
 import {
-  collection, getDocs, query, where, orderBy, Timestamp
+  collection, doc, getDocs, query, where, orderBy, runTransaction, serverTimestamp, Timestamp
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml, exportarExcel } from "../utils/database.js";
 
 const COL_VENDAS = "vv_vendas";
 const COL_ITENS  = "vv_venda_itens";
+const COL_CONTADORES = "vv_contadores";
 
 let _vendas    = [];     // vendas do dia carregadas (já com itens e totais calculados)
 let _abaAtual  = "pdv";
@@ -212,6 +213,14 @@ function renderizar() {
 
   // Lista de vendas (respeita filtros)
   const lista = vendasFiltradas();
+  const numerosDoDia = new Set();
+  const numerosDuplicados = _vendas.some((v) => {
+    const numero = Number(v.numero);
+    if (!Number.isFinite(numero) || numero <= 0) return true;
+    if (numerosDoDia.has(numero)) return true;
+    numerosDoDia.add(numero);
+    return false;
+  });
   const linhas = lista.length ? lista.map(linhaVenda).join("") :
     `<tr><td colspan="8" class="empty-cell">Nenhuma venda encontrada com esse filtro.</td></tr>`;
   const cancelTxt = canceladas ? ` · ${canceladas} cancelada${canceladas > 1 ? "s" : ""}` : "";
@@ -240,7 +249,10 @@ function renderizar() {
     <div class="card">
       <div class="card-header" style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
         <h3 class="card-section-title">Vendas do dia</h3>
-        <small style="color:var(--gray-400)">Mostrando ${lista.length} de ${_vendas.length} · clique numa venda para ver o detalhe</small>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          ${numerosDuplicados ? `<button type="button" class="btn-ghost btn-sm" id="btnRepararNumerosVendas">Corrigir numeração duplicada</button>` : ""}
+          <small style="color:var(--gray-400)">Mostrando ${lista.length} de ${_vendas.length} · clique numa venda para ver o detalhe</small>
+        </div>
       </div>
       <div class="table-wrap">
         <table class="data-table">
@@ -252,6 +264,63 @@ function renderizar() {
         </table>
       </div>
     </div>`;
+
+  document.getElementById("btnRepararNumerosVendas")?.addEventListener("click", repararNumerosDuplicados);
+}
+
+// Corrige apenas vendas que já nasceram com número repetido pela versão antiga.
+// Mantém a primeira ocorrência e atribui números novos às repetições, com confirmação do administrador.
+async function repararNumerosDuplicados() {
+  if (!window.confirm("Corrigir apenas os números duplicados das vendas? A primeira venda de cada número será preservada e as repetições receberão novos números.")) return;
+
+  try {
+    const snap = await getDocs(collection(db, COL_VENDAS));
+    const vendas = snap.docs.map((item) => ({ id: item.id, ...item.data() }))
+      .sort((a, b) => {
+        const dataA = a.data?.toMillis?.() || a.criadoEm?.toMillis?.() || 0;
+        const dataB = b.data?.toMillis?.() || b.criadoEm?.toMillis?.() || 0;
+        return dataA - dataB || String(a.id).localeCompare(String(b.id));
+      });
+
+    const usados = new Set();
+    let maiorNumero = 0;
+    const duplicados = [];
+    vendas.forEach((venda) => {
+      const numero = Number(venda.numero);
+      maiorNumero = Math.max(maiorNumero, Number.isFinite(numero) ? numero : 0);
+      if (!Number.isFinite(numero) || numero <= 0 || usados.has(numero)) duplicados.push(venda);
+      else usados.add(numero);
+    });
+
+    if (!duplicados.length) {
+      window.mostrarToast("Não há numeração duplicada para corrigir.", "success");
+      return;
+    }
+    if (duplicados.length > 400) throw new Error("Há muitas vendas duplicadas para corrigir de uma vez. Solicite uma revisão do administrador.");
+
+    const contadorRef = doc(db, COL_CONTADORES, "vendas");
+    await runTransaction(db, async (transacao) => {
+      let proximoNumero = maiorNumero;
+      duplicados.forEach((venda) => {
+        proximoNumero += 1;
+        transacao.update(doc(db, COL_VENDAS, venda.id), {
+          numeroOriginal: venda.numero ?? null,
+          numero: proximoNumero,
+          numeroCorrigidoEm: serverTimestamp()
+        });
+      });
+      transacao.set(contadorRef, {
+        ultimaVenda: proximoNumero,
+        atualizadoEm: serverTimestamp()
+      }, { merge: true });
+    });
+
+    window.mostrarToast(`${duplicados.length} número(s) de venda foram corrigidos.`, "success");
+    await carregarDia();
+  } catch (erro) {
+    console.error("Erro ao corrigir numeração de vendas:", erro);
+    window.mostrarToast(erro.message || "Não foi possível corrigir a numeração.", "error");
+  }
 }
 
 function badge(txt, bg, cor) {

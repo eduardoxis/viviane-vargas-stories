@@ -1,7 +1,7 @@
 // caixa.js — Módulo Caixa — Gerência Viviane Vargas Stories (Terminal PDV)
 import {
   collection, doc, addDoc, setDoc, getDoc, getDocs, updateDoc,
-  query, where, orderBy, limit, serverTimestamp, Timestamp, arrayUnion
+  query, where, orderBy, limit, runTransaction, serverTimestamp, Timestamp, arrayUnion
 } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { db } from "../services/firebase-config.js";
 import { formatarMoeda, escHtml } from "../utils/database.js";
@@ -13,6 +13,7 @@ const COL_CLI_PROM = "prom_clientes";
 const COL_COMP_PROM = "prom_compras";
 const COL_SESSOES  = "vv_caixa_sessoes";
 const COL_HIST     = "vv_estoque_historico";
+const COL_CONTADORES = "vv_contadores";
 
 let _dadosUsuario = null;
 let _usuarioId = "";
@@ -1332,13 +1333,31 @@ async function finalizarVendaPDV() {
   }
 
   try {
-    const snapCount = await getDocs(collection(db, COL_VENDAS));
-    const numero = snapCount.size + 1;
-
     // O mesmo ID é usado durante toda a tentativa; uma reentrada não cria outra venda.
     _vendaEmFinalizacaoId ||= crypto.randomUUID();
     const vendaRef = doc(db, COL_VENDAS, _vendaEmFinalizacaoId);
-    const vendaJaRegistrada = (await getDoc(vendaRef)).exists();
+    const vendaExistente = await getDoc(vendaRef);
+    const vendaJaRegistrada = vendaExistente.exists();
+    let numero = Number(vendaExistente.data()?.numero) || 0;
+
+    if (!vendaJaRegistrada) {
+      // O contador é atualizado em transação: duas vendas nunca recebem o mesmo número.
+      // Quando o contador ainda não existe, ele começa após a maior venda já registrada.
+      const maiorNumeroSnap = await getDocs(query(collection(db, COL_VENDAS), orderBy("numero", "desc"), limit(1)));
+      const maiorNumeroExistente = Number(maiorNumeroSnap.docs[0]?.data()?.numero) || 0;
+      const contadorRef = doc(db, COL_CONTADORES, "vendas");
+      await runTransaction(db, async (transacao) => {
+        const contador = await transacao.get(contadorRef);
+        const ultimoNumero = contador.exists()
+          ? Number(contador.data().ultimaVenda) || 0
+          : maiorNumeroExistente;
+        numero = Math.max(ultimoNumero, maiorNumeroExistente) + 1;
+        transacao.set(contadorRef, {
+          ultimaVenda: numero,
+          atualizadoEm: serverTimestamp()
+        }, { merge: true });
+      });
+    }
 
     // Se uma etapa posterior falhar (por exemplo, lançamento do fiado),
     // uma nova tentativa conclui somente o que falta: não duplica itens nem baixa o estoque outra vez.

@@ -49,6 +49,12 @@ service cloud.firestore {
       allow create: if podeOperarCaixa() && request.resource.data.operadorId == request.auth.uid;
       allow update, delete: if ehAdmin();
     }
+
+    // Contador transacional que entrega uma numeração única para cada venda.
+    match /vv_contadores/{id} {
+      allow read, create, update: if podeOperarCaixa();
+      allow delete: if ehAdmin();
+    }
     match /vv_venda_itens/{id} {
       allow read, create: if podeOperarCaixa();
       allow update, delete: if ehAdmin();
